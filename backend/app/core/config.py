@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     WEATHER_API_KEY: str = ""
     GOOGLE_MAPS_API_KEY: str = ""
 
+    # --- Groq LLM ---
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama3-70b-8192"
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
+
     # --- Razorpay ---
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
