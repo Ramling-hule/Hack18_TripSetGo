@@ -183,7 +183,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-6xl font-black text-main-pure tracking-tighter lowercase leading-none">
+          <h1 className="text-6xl font-black text-main-pure tracking-tighter capitalize leading-none">
             Analytics<span className="text-[var(--accent-primary)]">.</span>
           </h1>
           <p className="text-muted-pure font-bold mt-3">Your travel intelligence dashboard</p>

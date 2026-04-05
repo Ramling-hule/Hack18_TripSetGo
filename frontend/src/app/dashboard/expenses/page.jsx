@@ -484,7 +484,7 @@ export default function ExpensesPage() {
       {/* HEADER SECTION */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-6">
         <div>
-          <h1 className="text-6xl font-black text-main-pure tracking-tighter lowercase">SplitCosts<span className="text-[var(--accent-primary)]">.</span></h1>
+          <h1 className="text-6xl font-black text-main-pure tracking-tighter capitalize">SplitCosts<span className="text-[var(--accent-primary)]">.</span></h1>
           <p className="text-muted-pure font-bold mt-2 tracking-tight">Precision financial tracking for travel groups.</p>
         </div>
         <div className="flex flex-wrap gap-3">
