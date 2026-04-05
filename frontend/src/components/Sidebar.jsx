@@ -4,7 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "../store/authStore";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import { useThemeStore } from "../store/themeStore";
-import { useEffect } from "react";
+import { useNotificationStore } from "../store/notificationStore";
+import { useEffect, useState, useRef } from "react";
 import {
   PlaneTakeoff,
   LayoutDashboard,
@@ -71,11 +72,47 @@ export default function Sidebar() {
   const { user, logout } = useAuthStore();
   const { subscription, fetchStatus } = useSubscriptionStore();
   const { darkMode, toggleDarkMode } = useThemeStore();
+  const { 
+    unreadCount, 
+    notifications, 
+    initSocket, 
+    fetchNotifications, 
+    markAllAsRead,
+    disconnectSocket 
+  } = useNotificationStore();
+
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef(null);
 
   // Fetch subscription on mount (lightweight)
   useEffect(() => {
     fetchStatus();
-  }, [fetchStatus]);
+    initSocket();
+    fetchNotifications();
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [fetchStatus, initSocket, fetchNotifications, disconnectSocket]);
+
+  // Click outside to close notifications dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [notificationRef]);
+
+  const handleNotificationsClick = () => {
+    setShowNotifications(!showNotifications);
+    if (!showNotifications && unreadCount > 0) {
+      // Mark as read when opening
+      markAllAsRead();
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -121,10 +158,10 @@ export default function Sidebar() {
         {/* ── Usage Mini-Widget ── */}
         <Link
           href="/dashboard/subscription"
-          className="block px-3 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all mb-3 group"
+          className="block px-3 py-3 rounded-xl card-pure border border-pure hover:bg-secondary-pure transition-all mb-3 group"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-main-pure flex items-center gap-1.5">
               <Zap className={`w-3.5 h-3.5 ${isPro ? "text-indigo-400" : "text-slate-500"}`} />
               Daily Searches
             </span>
@@ -132,13 +169,13 @@ export default function Sidebar() {
               className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                 isPro
                   ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-                  : "bg-slate-700/60 text-slate-400 border border-slate-700"
+                  : "bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700"
               }`}
             >
               {isPro ? "PRO" : "FREE"}
             </span>
           </div>
-          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-1.5">
+          <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-1.5">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 usagePct >= 100
@@ -150,10 +187,10 @@ export default function Sidebar() {
               style={{ width: `${usagePct}%` }}
             />
           </div>
-          <p className="text-[11px] text-slate-400">
-            <span className="text-white font-semibold">{dailyUsed}</span>
+          <p className="text-[11px] text-muted-pure">
+            <span className="text-main-pure font-semibold">{dailyUsed}</span>
             {" / "}
-            <span className="text-white font-semibold">{dailyLimit}</span>
+            <span className="text-main-pure font-semibold">{dailyLimit}</span>
             {" searches used today"}
           </p>
         </Link>
@@ -172,13 +209,42 @@ export default function Sidebar() {
           <span className="text-sm font-semibold">{darkMode ? "Light Mode" : "Dark Mode"}</span>
         </button>
 
-        <button className="sidebar-notification-btn">
-          <div className="flex items-center gap-3">
-            <Bell className="w-4 h-4" />
-            <span className="text-sm font-bold">Updates</span>
-          </div>
-          <span className="sidebar-badge">3</span>
-        </button>
+        <div className="relative" ref={notificationRef}>
+          <button 
+            className="sidebar-notification-btn w-full"
+            onClick={handleNotificationsClick}
+          >
+            <div className="flex items-center gap-3">
+              <Bell className="w-4 h-4" />
+              <span className="text-sm font-bold">Updates</span>
+            </div>
+            {unreadCount > 0 && (
+              <span className="sidebar-badge bg-red-500 text-white">{unreadCount}</span>
+            )}
+          </button>
+
+          {/* Notifications Dropdown */}
+          {showNotifications && (
+            <div className="absolute bottom-12 left-0 w-64 max-h-80 overflow-y-auto bg-slate-800 border border-slate-700 shadow-xl rounded-xl z-50 p-2">
+              <h4 className="text-xs font-bold text-slate-400 mb-2 px-2 uppercase tracking-wider">Notifications</h4>
+              {notifications.length === 0 ? (
+                <p className="text-sm text-slate-500 px-2 pb-2">No new updates</p>
+              ) : (
+                <div className="space-y-1">
+                  {notifications.map((n) => (
+                    <div 
+                      key={n.id} 
+                      className={`p-2 rounded-lg text-sm ${!n.is_read ? 'bg-indigo-500/10 border border-indigo-500/20' : 'hover:bg-white/5'}`}
+                    >
+                      <p className="font-semibold text-white text-[13px]">{n.title}</p>
+                      <p className="text-slate-400 text-xs mt-0.5 leading-tight">{n.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="sidebar-user mt-4">
           <div className="relative shrink-0">
