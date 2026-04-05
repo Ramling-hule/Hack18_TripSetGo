@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   MapPin, Calendar, Users, Wallet, Search, Plus, Trash2, Copy,
   Heart, ArrowRight, Plane, Trophy, Globe, Loader2, MoreVertical,
-  SlidersHorizontal, Filter, Star, Clock, Eye, BookOpen
+  SlidersHorizontal, Filter, Star, Clock, Eye, BookOpen, Lock
 } from "lucide-react";
 import { useTripStore } from "../../../store/tripStore";
 import { useNotificationStore } from "../../../store/notificationStore";
@@ -50,7 +50,7 @@ function EmptyState() {
 }
 
 /* ── Trip Card ───────────────────────────────────────────────── */
-function TripCard({ trip, onDelete, onDuplicate, onFavorite, loading }) {
+function TripCard({ trip, onDelete, onDuplicate, onFavorite, onTogglePublic, loading }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [actioning, setActioning] = useState(null);
   const days = getDays(trip.start_date, trip.end_date) || trip.duration_days;
@@ -88,12 +88,19 @@ function TripCard({ trip, onDelete, onDuplicate, onFavorite, loading }) {
             </p>
           )}
         </div>
-        {/* Favorite + Menu */}
+        {/* Favorite + Share controls */}
         <div className="flex items-center gap-2 absolute top-3 left-4">
           <button onClick={() => handle(onFavorite, "fav")} disabled={actioning === "fav"}
+            title={isFav ? "Remove from favourites" : "Add to favourites"}
             className="w-8 h-8 flex items-center justify-center rounded-xl transition-all hover:scale-110"
             style={{ background: "var(--card-bg)", color: isFav ? "#ef4444" : "var(--text-muted)" }}>
             {actioning === "fav" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Heart className={`w-4 h-4 ${isFav ? "fill-current" : ""}`} />}
+          </button>
+          <button onClick={() => handle(onTogglePublic, "pub")} disabled={actioning === "pub"}
+            title={trip.is_public ? "Visible on Discover — click to make private" : "Private — click to share on Discover"}
+            className="w-8 h-8 flex items-center justify-center rounded-xl transition-all hover:scale-110"
+            style={{ background: "var(--card-bg)", color: trip.is_public ? "#6366f1" : "var(--text-muted)" }}>
+            {actioning === "pub" ? <Loader2 className="w-4 h-4 animate-spin" /> : trip.is_public ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
           </button>
         </div>
         <div className="relative">
@@ -229,7 +236,7 @@ function StatsBar({ trips }) {
 const SORTS = ["Newest", "Oldest", "Budget ↑", "Budget ↓", "Duration"];
 
 export default function MyTripsPage() {
-  const { trips, fetchMyTrips, deleteTrip, duplicateTrip, toggleFavTrip, tripsLoaded } = useTripStore();
+  const { trips, fetchMyTrips, deleteTrip, duplicateTrip, toggleFavTrip, togglePublic, tripsLoaded } = useTripStore();
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("Newest");
   const [filterFav, setFilterFav] = useState(false);
@@ -313,6 +320,7 @@ export default function MyTripsPage() {
               onDelete={() => deleteTrip(trip.id)}
               onDuplicate={() => duplicateTrip(trip.id)}
               onFavorite={() => toggleFavTrip(trip.id)}
+              onTogglePublic={() => togglePublic(trip.id)}
             />
           ))}
         </div>

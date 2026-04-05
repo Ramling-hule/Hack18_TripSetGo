@@ -40,6 +40,19 @@ def _trip_to_card(trip: Trip, user: User, current_user_id=None, liked_ids=None, 
     liked_ids = liked_ids or set()
     saved_ids = saved_ids or set()
     cover = trip.cover_image or get_cover_image(trip.destination)
+
+    # Derive cost_per_person if not stored
+    cost_pp = trip.cost_per_person
+    if cost_pp is None:
+        num = max(trip.num_travelers or 1, 1)
+        total = None
+        if trip.budget_summary and isinstance(trip.budget_summary, dict):
+            total = trip.budget_summary.get("total_cost")
+        if total:
+            cost_pp = round(float(total) / num, 2)
+        elif trip.budget:
+            cost_pp = round(float(trip.budget) / num, 2)
+
     return {
         "trip_id": str(trip.id),
         "title": trip.title,
@@ -48,7 +61,7 @@ def _trip_to_card(trip: Trip, user: User, current_user_id=None, liked_ids=None, 
         "description": trip.description,
         "cover_image": cover,
         "images": trip.images or [cover],
-        "cost_per_person": trip.cost_per_person,
+        "cost_per_person": cost_pp,
         "budget": trip.budget,
         "duration_days": trip.duration_days,
         "num_travelers": trip.num_travelers,
