@@ -168,37 +168,115 @@ export default function TripDetailPage() {
             )}
           </section>
 
-          {/* Itinerary */}
+          {/* Itinerary Timeline */}
           {trip.itinerary?.days?.length > 0 && (
-            <section className="card-pure p-8 rounded-3xl">
-              <h2 className="text-2xl font-black text-main-pure mb-6 flex items-center gap-2">
-                <Navigation className="w-6 h-6 text-indigo-500" /> Day by Day Plan
-              </h2>
-              <div className="space-y-6">
+            <section className="card-pure p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-black text-main-pure flex items-center gap-3">
+                  <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl">
+                    <Navigation className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  Day-by-Day Journey
+                </h2>
+                <span className="text-sm font-bold text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                   {trip.itinerary.days.length} Days Planned
+                </span>
+              </div>
+
+              <div className="space-y-12">
                 {trip.itinerary.days.map((day, idx) => (
-                  <div key={idx} className="relative pl-8 border-l-2 border-indigo-100 dark:border-indigo-900 pb-2 last:border-0 last:pb-0">
-                    <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-indigo-500 border-4 border-[var(--bg-card)]" />
-                    <h3 className="text-xl font-bold text-main-pure mb-2 flex items-center gap-2">
-                      Day {day.day} <span className="text-muted-pure font-medium text-base">- {day.title}</span>
-                    </h3>
-                    
-                    {day.activities?.length > 0 && (
-                      <div className="mt-4 space-y-3">
-                        {day.activities.map((act, i) => (
-                          <div key={i} className="flex items-start gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                            <Clock className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
-                            <div>
-                              <p className="font-bold text-main-pure">{act.time} - {act.activity}</p>
-                              {act.cost_estimate && (
-                                <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1">
-                                  <IndianRupee className="w-3 h-3" /> {act.cost_estimate}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                  <div key={idx} className="relative">
+                    {/* Vertical Connector */}
+                    {idx !== trip.itinerary.days.length - 1 && (
+                      <div className="absolute left-[23px] top-[50px] bottom-[-50px] w-0.5 bg-gradient-to-b from-indigo-500/30 to-transparent" />
                     )}
+
+                    {/* Day Header */}
+                    <div className="flex items-center gap-5 mb-8">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-lg shadow-indigo-500/20 z-10">
+                        {day.day}
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-black text-main-pure">{day.day_summary || day.title || `Day ${day.day}`}</h3>
+                        {day.date && <p className="text-sm font-bold text-indigo-500/80 uppercase tracking-widest">{day.date}</p>}
+                      </div>
+                    </div>
+
+                    <div className="ml-16 space-y-6">
+                      {/* Handle slot-based format (New) */}
+                      {(day.morning || day.afternoon || day.evening) ? (
+                        <>
+                          {[
+                            { slot: "Morning", data: day.morning, icon: "🌅", color: "amber" },
+                            { slot: "Afternoon", data: day.afternoon, icon: "☀️", color: "sky" },
+                            { slot: "Evening", data: day.evening, icon: "🌆", color: "purple" }
+                          ].map((s) => {
+                            if (!s.data) return null;
+                            // If it's a published trip, there's usually 1 activity selected. 
+                            // If we have selected_activities, we show that. 
+                            // Otherwise, for a discover trip, we might just show the first one or a simplified view.
+                            const activities = s.data.activities || [];
+                            const mainAct = activities[0]; // For discovery detail, we just show the main flow
+                            
+                            if (!mainAct) return null;
+
+                            return (
+                              <div key={s.slot} className="relative group">
+                                <div className="flex items-start gap-4">
+                                  <div className="flex flex-col items-center gap-2 mt-1">
+                                    <div className="text-xl">{s.icon}</div>
+                                    <div className="text-[10px] font-black uppercase text-slate-400 rotate-90 origin-left ml-6 mt-2">{s.slot}</div>
+                                  </div>
+                                  
+                                  <div className="flex-1 bg-slate-50 dark:bg-slate-800/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 group-hover:border-indigo-200 dark:group-hover:border-indigo-500/30 transition-all group-hover:shadow-lg group-hover:shadow-indigo-500/5">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                                          <span className="text-xs font-black text-indigo-500 uppercase tracking-tight">{s.data.time}</span>
+                                        </div>
+                                        <h4 className="font-black text-main-pure text-lg">{mainAct.name || mainAct.activity}</h4>
+                                      </div>
+                                      {mainAct.cost > 0 && (
+                                        <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-black px-2.5 py-1 rounded-lg">
+                                          ₹{mainAct.cost}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-muted-pure leading-relaxed mb-3 line-clamp-2">
+                                      {mainAct.description || `Enjoy a wonderful ${s.slot.toLowerCase()} activity in ${trip.destination}.`}
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {mainAct.tags?.map(t => (
+                                        <span key={t} className="text-[10px] font-bold text-slate-500 uppercase bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                                          #{t}
+                                        </span>
+                                      ))}
+                                      {mainAct.duration && (
+                                        <span className="text-[10px] font-bold text-indigo-500 uppercase flex items-center gap-1">
+                                          <Clock className="w-3 h-3" /> {mainAct.duration}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </>
+                      ) : (
+                        /* Handle old list-based format (Fallback) */
+                        day.activities?.map((act, i) => (
+                          <div key={i} className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                               <Clock className="w-4 h-4 text-indigo-400" />
+                               <span className="text-sm font-bold text-main-pure">{act.time} - {act.activity}</span>
+                            </div>
+                            <p className="text-sm text-muted-pure ml-7">{act.description}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
