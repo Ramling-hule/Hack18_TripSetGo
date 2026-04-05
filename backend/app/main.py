@@ -110,7 +110,7 @@ app.include_router(subscription_router, prefix="/api/v1/subscription", tags=["Su
 app.include_router(trips_router, prefix="/api/v1/trips", tags=["Trip Planning"])
 
 # Discover Router: Social travel feed, likes, saves, comments, clone
-app.include_router(discover_router, prefix="/api/v1", tags=["Discover"])
+app.include_router(discover_router, prefix="/api/v1/discover", tags=["Discover"])
 
 # Notifications Router
 app.include_router(notifications_router, prefix="/api/v1/notifications", tags=["Notifications"])

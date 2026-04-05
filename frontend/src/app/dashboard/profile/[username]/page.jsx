@@ -26,7 +26,7 @@ export default function UserProfilePage() {
   const fetchProfile = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/users/${username}/profile`);
+      const res = await api.get(`/discover/users/${username}/profile`);
       setProfile(res.data.user);
       setTrips(res.data.trips);
       setIsFollowing(res.data.user.is_following);
@@ -43,7 +43,7 @@ export default function UserProfilePage() {
     setIsFollowing(!isFollowing);
     setFollowers((prev) => (isFollowing ? prev - 1 : prev + 1));
     try {
-      await api.post(`/users/${username}/follow`);
+      await api.post(`/discover/users/${username}/follow`);
     } catch {
       // Revert
       setIsFollowing(!isFollowing);

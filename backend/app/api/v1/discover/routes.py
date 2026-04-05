@@ -95,7 +95,7 @@ def _engagement_score(trip: Trip) -> float:
 # ──────────────────────────────────────────────────────────────────────────────
 # GET /api/v1/discover — Main Feed
 # ──────────────────────────────────────────────────────────────────────────────
-@router.get("/discover")
+@router.get("")
 async def discover_feed(
     page: int = Query(1, ge=1),
     limit: int = Query(12, ge=1, le=50),
@@ -187,7 +187,7 @@ async def discover_feed(
 # ──────────────────────────────────────────────────────────────────────────────
 # GET /api/v1/discover/search — Full-text search
 # ──────────────────────────────────────────────────────────────────────────────
-@router.get("/discover/search")
+@router.get("/search")
 async def search_trips(
     q: str = Query(..., min_length=1),
     page: int = Query(1, ge=1),
@@ -241,7 +241,7 @@ async def search_trips(
 # ──────────────────────────────────────────────────────────────────────────────
 # GET /api/v1/discover/trending — Top 6 trending trips this week
 # ──────────────────────────────────────────────────────────────────────────────
-@router.get("/discover/trending")
+@router.get("/trending")
 async def trending_trips(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),

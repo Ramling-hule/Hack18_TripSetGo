@@ -125,7 +125,7 @@ export const useDiscoverStore = create((set, get) => ({
   fetchTripDetail: async (tripId) => {
     set({ isDetailLoading: true, selectedTrip: null });
     try {
-      const res = await api.get(`/trips/${tripId}`);
+      const res = await api.get(`/discover/trips/${tripId}`);
       set({ selectedTrip: res.data, isDetailLoading: false });
     } catch (err) {
       set({ isDetailLoading: false });
@@ -163,7 +163,7 @@ export const useDiscoverStore = create((set, get) => ({
     }));
 
     try {
-      await api.post(`/trips/${tripId}/like`);
+      await api.post(`/discover/trips/${tripId}/like`);
     } catch {
       // Revert on error
       set((state) => ({
@@ -199,7 +199,7 @@ export const useDiscoverStore = create((set, get) => ({
     }));
 
     try {
-      await api.post(`/trips/${tripId}/save`);
+      await api.post(`/discover/trips/${tripId}/save`);
     } catch {
       set((state) => ({
         trips: state.trips.map((t) =>
@@ -214,7 +214,7 @@ export const useDiscoverStore = create((set, get) => ({
   // ── Comments ────────────────────────────────────────────────────
   fetchComments: async (tripId) => {
     try {
-      const res = await api.get(`/trips/${tripId}/comments`);
+      const res = await api.get(`/discover/trips/${tripId}/comments`);
       set((state) => ({
         comments: { ...state.comments, [tripId]: res.data.comments },
       }));
@@ -224,7 +224,7 @@ export const useDiscoverStore = create((set, get) => ({
   addComment: async (tripId, comment) => {
     set({ isCommentLoading: true });
     try {
-      const res = await api.post(`/trips/${tripId}/comment`, { comment });
+      const res = await api.post(`/discover/trips/${tripId}/comment`, { comment });
       set((state) => ({
         comments: {
           ...state.comments,
@@ -248,7 +248,7 @@ export const useDiscoverStore = create((set, get) => ({
   // ── Clone trip ──────────────────────────────────────────────────
   cloneTrip: async (tripId) => {
     try {
-      const res = await api.post(`/trips/${tripId}/clone`);
+      const res = await api.post(`/discover/trips/${tripId}/clone`);
       return res.data;
     } catch (err) {
       throw err;
