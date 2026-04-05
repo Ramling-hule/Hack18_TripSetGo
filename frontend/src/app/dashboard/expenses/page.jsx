@@ -488,21 +488,21 @@ export default function ExpensesPage() {
           <p className="text-muted-pure font-bold mt-2 tracking-tight">Precision financial tracking for travel groups.</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button onClick={() => setShowAddGroupModal(true)} disabled={isSubmitting} className="flex items-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={() => setShowAddGroupModal(true)} disabled={isSubmitting} className="flex items-center gap-2 px-6 py-4 bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white rounded-2xl font-black shadow-sm dark:shadow-none hover:bg-slate-200 dark:hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
             {isSubmitting ? <>
               <Loader2 className="w-5 h-5 animate-spin" /> Creating...
             </> : <>
               <Plus className="w-5 h-5" /> New Group
             </>}
           </button>
-          <button onClick={() => setShowRecordPaymentModal(true)} disabled={isSubmitting} className="flex items-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={() => setShowRecordPaymentModal(true)} disabled={isSubmitting} className="flex items-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-500/20 dark:shadow-emerald-500/10 hover:shadow-emerald-500/30 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
             {isSubmitting ? <>
               <Loader2 className="w-5 h-5 animate-spin" /> Processing...
             </> : <>
               <Handshake className="w-5 h-5" /> Settle
             </>}
           </button>
-          <button onClick={() => setShowAddExpenseModal(true)} disabled={isSubmitting} className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={() => setShowAddExpenseModal(true)} disabled={isSubmitting} className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl shadow-indigo-500/20 dark:shadow-indigo-500/10 hover:shadow-indigo-500/30 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
             {isSubmitting ? <>
               <Loader2 className="w-5 h-5 animate-spin" /> Adding...
             </> : <>
@@ -540,13 +540,13 @@ export default function ExpensesPage() {
       {activeTab === 'overview' && currentGroup && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* POSITION CARD */}
-          <div className="lg:col-span-4 bg-slate-900 p-10 rounded-[48px] text-white shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[350px]">
+          <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-10 rounded-[48px] text-slate-900 dark:text-white shadow-xl dark:shadow-indigo-500/10 border border-transparent dark:border-indigo-500/20 relative overflow-hidden flex flex-col justify-between min-h-[350px]">
             <div className="relative z-10">
-              <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest mb-4">Your Position</p>
-              <h2 className={`text-6xl font-black tracking-tighter ${userBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <p className="text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest mb-4">Your Position</p>
+              <h2 className={`text-6xl font-black tracking-tighter ${userBalance >= 0 ? 'text-emerald-600 dark:text-emerald-500 drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'text-rose-600 dark:text-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.3)]'}`}>
                 {userBalance >= 0 ? '+' : '-'}{formatCurrency(userBalance)}
               </h2>
-              <p className="text-slate-400 font-bold mt-6 leading-tight">Net balance for <span className="text-white">{currentUserName}</span>.</p>
+              <p className="text-slate-600 dark:text-slate-400 font-bold mt-6 leading-tight">Net balance for <span className="text-slate-900 dark:text-white">{currentUserName}</span>.</p>
             </div>
             <div className="absolute -right-10 -bottom-10 opacity-10 rotate-12">
                 <PieChart size={240} />
@@ -558,9 +558,9 @@ export default function ExpensesPage() {
             <h3 className="text-2xl font-black text-main-pure mb-10 flex items-center gap-3"><Users className="text-[var(--accent-primary)]" /> Members</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {currentGroup.members.map(m => (
-                <div key={m.id} className="p-8 bg-secondary-pure rounded-[32px] border-2 border-transparent hover:border-[var(--accent-soft)] transition-all group">
+                <div key={m.id} className="p-8 bg-secondary-pure rounded-[32px] border-2 border-transparent hover:border-[var(--accent-soft)] transition-all group shadow-sm dark:shadow-none">
                    <p className="text-[10px] font-black text-muted-pure uppercase tracking-widest mb-1">{m.name}</p>
-                   <p className={`text-3xl font-black ${balances[m.id] >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                   <p className={`text-3xl font-black ${balances[m.id] >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
                      {balances[m.id] >= 0 ? '+' : '-'}{formatCurrency(balances[m.id])}
                    </p>
                 </div>
@@ -745,8 +745,8 @@ export default function ExpensesPage() {
               </div>
            </div>
            <div className="lg:col-span-4 space-y-6">
-              <div className="bg-slate-900 p-10 rounded-[48px] text-white relative overflow-hidden shadow-2xl">
-                <Settings className="absolute -right-6 -top-6 w-32 h-32 text-white/5" />
+              <div className="bg-white dark:bg-slate-900 p-10 rounded-[48px] text-slate-900 dark:text-white relative overflow-hidden shadow-xl dark:shadow-indigo-500/20 border border-transparent dark:border-indigo-500/20">
+                <Settings className="absolute -right-6 -top-6 w-32 h-32 text-slate-900/5 dark:text-white/5" />
                 <h3 className="text-xl font-black mb-8 relative z-10">Group Settings</h3>
                 <div className="space-y-4 relative z-10">
                   <button onClick={() => { setNewGroup({...currentGroup}); setShowEditGroupModal(true); }} disabled={isSubmitting} className="w-full p-6 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-between hover:bg-white/10 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed">
@@ -796,7 +796,7 @@ export default function ExpensesPage() {
       {/* RECORD SETTLEMENT */}
       {showRecordPaymentModal && (
         <div className="fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-[48px] p-12 shadow-2xl animate-in zoom-in-95">
+          <div className="card-pure w-full max-w-md rounded-[48px] p-12 shadow-2xl dark:shadow-indigo-500/20 border border-pure animate-in zoom-in-95">
              <div className="flex justify-between items-center mb-10">
                 <h3 className="text-3xl font-black tracking-tighter">Record Payment</h3>
                 <button onClick={() => setShowRecordPaymentModal(false)} className="p-3 bg-slate-50 rounded-full transition-all hover:rotate-90"><X /></button>

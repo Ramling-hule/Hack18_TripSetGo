@@ -106,11 +106,11 @@ function UsageBar({ used, limit, plan }) {
     : "text-indigo-400";
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5 mb-6">
+    <div className="rounded-2xl border border-pure card-pure p-5 mb-6 shadow-sm dark:shadow-indigo-500/10">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <TrendingUp className={`w-4 h-4 ${textColor}`} />
-          <span className="text-sm font-semibold text-white">Today's Usage</span>
+          <span className="text-sm font-semibold text-main-pure">Today's Usage</span>
         </div>
         <div className="flex items-center gap-2">
           <span
@@ -128,7 +128,7 @@ function UsageBar({ used, limit, plan }) {
       </div>
 
       {/* Track */}
-      <div className="h-2 bg-white/10 rounded-full overflow-hidden mb-2">
+      <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
         <div
           className={`h-full rounded-full transition-all duration-700 ease-out ${barColor}`}
           style={{ width: `${pct}%` }}
@@ -136,11 +136,11 @@ function UsageBar({ used, limit, plan }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-400">
-          <span className="font-bold text-white">{used}</span>
-          <span className="text-slate-500"> / </span>
-          <span className="font-bold text-white">{limit}</span>
-          <span className="text-slate-500"> searches used today</span>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          <span className="font-bold text-main-pure">{used}</span>
+          <span className="text-muted-pure"> / </span>
+          <span className="font-bold text-main-pure">{limit}</span>
+          <span className="text-muted-pure"> searches used today</span>
         </p>
         {isDanger && (
           <span className="text-xs font-bold text-red-400 flex items-center gap-1">
@@ -179,10 +179,10 @@ function PlanCard({ planKey, plan, isCurrentPlan, billingCycle, onSubscribe, isL
 
   return (
     <div
-      className={`relative rounded-2xl border p-6 flex flex-col transition-all duration-300 group ${plan.borderColor} ${
+      className={`relative rounded-2xl border p-6 flex flex-col transition-all duration-300 group card-pure ${
         isFeatured
-          ? "bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-2xl scale-[1.02]"
-          : "bg-white/[0.02] hover:bg-white/[0.05]"
+          ? "shadow-xl dark:shadow-indigo-500/20 scale-[1.02] border-indigo-500/30"
+          : "hover:border-indigo-500/30 border-pure"
       } ${isCurrentPlan ? "ring-2 ring-indigo-500/60" : ""}`}
     >
       {/* Glow */}
@@ -205,21 +205,21 @@ function PlanCard({ planKey, plan, isCurrentPlan, billingCycle, onSubscribe, isL
       <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${plan.gradient} flex items-center justify-center mb-4 shadow-lg`}>
         <Icon className="w-5 h-5 text-white" />
       </div>
-      <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
-      <p className="text-xs text-slate-400 mb-4">{plan.description}</p>
+      <h3 className="text-lg font-bold text-main-pure mb-1">{plan.name}</h3>
+      <p className="text-xs text-muted-pure mb-4">{plan.description}</p>
 
       {/* Price */}
       <div className="mb-4">
         {price === 0 ? (
-          <div className="text-3xl font-black text-white">
+          <div className="text-3xl font-black text-main-pure">
             Free
-            <span className="text-sm text-slate-400 font-normal ml-1">forever</span>
+            <span className="text-sm text-muted-pure font-normal ml-1">forever</span>
           </div>
         ) : (
           <div className="flex items-end gap-1">
-            <span className="text-sm text-slate-400 mb-1">₹</span>
-            <span className="text-3xl font-black text-white">{price}</span>
-            <span className="text-sm text-slate-400 mb-1">
+            <span className="text-sm text-muted-pure mb-1">₹</span>
+            <span className="text-3xl font-black text-main-pure">{price}</span>
+            <span className="text-sm text-muted-pure mb-1">
               /{planKey === "PRO_YEARLY" ? "yr" : "mo"}
             </span>
           </div>
@@ -227,7 +227,7 @@ function PlanCard({ planKey, plan, isCurrentPlan, billingCycle, onSubscribe, isL
       </div>
 
       {/* Daily limit */}
-      <div className={`flex items-center gap-2 text-xs font-semibold ${plan.accentColor} mb-5 bg-white/5 rounded-lg px-3 py-2`}>
+      <div className={`flex items-center gap-2 text-xs font-semibold ${plan.accentColor} mb-5 bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2`}>
         <Shield className="w-3.5 h-3.5" />
         {plan.daily_limit} trip searches per day
       </div>
@@ -235,14 +235,14 @@ function PlanCard({ planKey, plan, isCurrentPlan, billingCycle, onSubscribe, isL
       {/* Features */}
       <ul className="space-y-2 flex-1 mb-6">
         {plan.features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-slate-300">
-            <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <li key={f} className="flex items-start gap-2 text-sm text-slate-900 dark:text-slate-100">
+            <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
             {f}
           </li>
         ))}
         {plan.missing.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-slate-600 line-through">
-            <X className="w-4 h-4 text-slate-700 shrink-0 mt-0.5" />
+          <li key={f} className="flex items-start gap-2 text-sm text-slate-400 line-through">
+            <X className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
             {f}
           </li>
         ))}
@@ -250,12 +250,12 @@ function PlanCard({ planKey, plan, isCurrentPlan, billingCycle, onSubscribe, isL
 
       {/* CTA */}
       {isCurrentPlan ? (
-        <div className="flex items-center justify-center gap-2 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm font-semibold">
+        <div className="flex items-center justify-center gap-2 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-bold shadow-sm">
           <CheckCircle className="w-4 h-4" />
           Current Plan
         </div>
       ) : planKey === "FREE" ? (
-        <div className="flex items-center justify-center py-3 rounded-xl border border-white/10 text-slate-500 text-sm font-semibold">
+        <div className="flex items-center justify-center py-3 rounded-xl border border-pure text-muted-pure text-sm font-bold bg-slate-50 dark:bg-slate-800">
           Always Free
         </div>
       ) : (
@@ -364,13 +364,13 @@ export default function SubscriptionPage() {
             <Crown className="w-3.5 h-3.5 text-amber-400" />
             Subscription Plans
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tight mb-3">
+          <h1 className="text-4xl font-black text-main-pure tracking-tight mb-3">
             Unlock Your Full Travel{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-violet-500">
               Potential
             </span>
           </h1>
-          <p className="text-slate-400 text-base">
+          <p className="text-muted-pure text-base">
             Choose a plan that matches your travel ambitions. Upgrade anytime, cancel anytime.
           </p>
         </div>
@@ -405,13 +405,13 @@ export default function SubscriptionPage() {
         )}
 
         {/* Billing Toggle */}
-        <div className="flex items-center gap-2 p-1 rounded-xl bg-white/5 border border-white/10 w-fit mb-8">
+        <div className="flex items-center gap-2 p-1 rounded-xl card-pure border border-pure w-fit mb-8">
           <button
             onClick={() => setBillingCycle("monthly")}
             className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
               billingCycle === "monthly"
-                ? "bg-white text-slate-900 shadow"
-                : "text-slate-400 hover:text-white"
+                ? "bg-slate-200 dark:bg-slate-700 text-main-pure shadow"
+                : "text-muted-pure hover:text-main-pure"
             }`}
           >
             Monthly
@@ -420,12 +420,12 @@ export default function SubscriptionPage() {
             onClick={() => setBillingCycle("yearly")}
             className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
               billingCycle === "yearly"
-                ? "bg-white text-slate-900 shadow"
-                : "text-slate-400 hover:text-white"
+                ? "bg-slate-200 dark:bg-slate-700 text-main-pure shadow"
+                : "text-muted-pure hover:text-main-pure"
             }`}
           >
             Yearly
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-sm">
               Save ₹389
             </span>
           </button>
