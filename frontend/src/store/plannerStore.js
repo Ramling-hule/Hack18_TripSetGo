@@ -153,9 +153,10 @@ export const usePlannerStore = create((set, get) => ({
         selected_food: fd || null,
         selected_activities: selActObjs,
         total_cost: cost.total,
+        cost_per_person: plan.meta?.num_travelers > 0 ? Math.round(cost.total / plan.meta.num_travelers) : cost.total,
         plan_summary: plan.meta?.summary_text || "",
         tags: plan.meta?.tags || [],
-        is_public: false,
+        is_public: true,
         full_plan: plan,
       });
 

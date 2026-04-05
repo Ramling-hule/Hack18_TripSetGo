@@ -54,6 +54,15 @@ export const useTripStore = create((set, get) => ({
     return is_favorite;
   },
 
+  togglePublic: async (tripId) => {
+    const res = await api.patch(`/trips/${tripId}/publish`);
+    const { is_public } = res.data;
+    set((s) => ({
+      trips: s.trips.map((t) => t.id === tripId ? { ...t, is_public } : t)
+    }));
+    return is_public;
+  },
+
   // ── Legacy state ──────────────────────────────────────────────────────────
   tripData: null,
   isLoading: false,

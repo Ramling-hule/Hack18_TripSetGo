@@ -56,9 +56,11 @@ class SaveTripRequest(BaseModel):
     selected_food: Optional[Dict] = None
     selected_activities: Optional[Dict] = None  # {slot_key: activity_obj}
     total_cost: float = 0
+    cost_per_person: Optional[float] = None
     plan_summary: Optional[str] = None
     tags: Optional[List[str]] = None
-    is_public: bool = False
+    is_public: bool = True
+    cover_image: Optional[str] = None
     # Full plan JSON for itinerary view
     full_plan: Optional[Dict] = None
 
@@ -158,6 +160,18 @@ async def save_trip(
     if payload.full_plan and payload.full_plan.get("itinerary"):
         itinerary_json = {"days": payload.full_plan["itinerary"], "selected_activities": payload.selected_activities or {}}
 
+    # Compute cost_per_person: prefer explicit field, else total_cost / travelers
+    _num = max(payload.num_travelers or 1, 1)
+    cost_pp = payload.cost_per_person
+    if cost_pp is None and payload.total_cost:
+        cost_pp = round(payload.total_cost / _num, 2)
+    elif cost_pp is None and payload.budget:
+        cost_pp = round(payload.budget / _num, 2)
+
+    # Determine cover image from destination
+    from app.api.v1.discover.routes import get_cover_image
+    cover_img = payload.cover_image or get_cover_image(payload.destination)
+
     trip = Trip(
         user_id=current_user.id,
         title=title,
@@ -168,12 +182,14 @@ async def save_trip(
         end_date=payload.end_date,
         duration_days=payload.duration_days,
         budget=payload.budget,
+        cost_per_person=cost_pp,
         num_travelers=payload.num_travelers,
         group_type=payload.group_type,
         itinerary=itinerary_json,
         transport=transport_json,
         stay=stay_json,
         budget_summary=budget_summary,
+        cover_image=cover_img,
         tags=payload.tags or [],
         is_public=payload.is_public,
     )
@@ -255,6 +271,24 @@ async def delete_trip(
     db.delete(trip)
     db.commit()
     return {"message": "Trip deleted"}
+
+
+# ─── Publish Toggle ───────────────────────────────────────────────────────────
+
+@router.patch("/{trip_id}/publish")
+async def toggle_publish(
+    trip_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Toggle a trip's public/private visibility on the Discover feed."""
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == current_user.id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    trip.is_public = not trip.is_public
+    db.commit()
+    return {"is_public": trip.is_public, "message": "Trip is now " + ("visible on Discover" if trip.is_public else "private")}
 
 
 # ─── Favorite Toggle ──────────────────────────────────────────────────────────

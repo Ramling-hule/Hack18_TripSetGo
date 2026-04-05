@@ -26,12 +26,21 @@ const nextConfig = {
     ];
   },
 
-  // Allow images from Google user avatars
+  // Allow images from external domains
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.unsplash.com",
       },
     ],
   },
