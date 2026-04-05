@@ -121,10 +121,10 @@ export default function Sidebar() {
         {/* ── Usage Mini-Widget ── */}
         <Link
           href="/dashboard/subscription"
-          className="block px-3 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all mb-3 group"
+          className="block px-3 py-3 rounded-xl card-pure border border-pure hover:bg-secondary-pure transition-all mb-3 group"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-main-pure flex items-center gap-1.5">
               <Zap className={`w-3.5 h-3.5 ${isPro ? "text-indigo-400" : "text-slate-500"}`} />
               Daily Searches
             </span>
@@ -132,13 +132,13 @@ export default function Sidebar() {
               className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                 isPro
                   ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-                  : "bg-slate-700/60 text-slate-400 border border-slate-700"
+                  : "bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700"
               }`}
             >
               {isPro ? "PRO" : "FREE"}
             </span>
           </div>
-          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-1.5">
+          <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-1.5">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 usagePct >= 100
@@ -150,10 +150,10 @@ export default function Sidebar() {
               style={{ width: `${usagePct}%` }}
             />
           </div>
-          <p className="text-[11px] text-slate-400">
-            <span className="text-white font-semibold">{dailyUsed}</span>
+          <p className="text-[11px] text-muted-pure">
+            <span className="text-main-pure font-semibold">{dailyUsed}</span>
             {" / "}
-            <span className="text-white font-semibold">{dailyLimit}</span>
+            <span className="text-main-pure font-semibold">{dailyLimit}</span>
             {" searches used today"}
           </p>
         </Link>
