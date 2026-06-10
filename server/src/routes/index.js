@@ -8,6 +8,7 @@ const userRoutes         = require('./user.routes')
 const notificationRoutes = require('./notification.routes')
 const subscriptionRoutes = require('./subscription.routes')
 const searchRoutes       = require('./search.routes')
+const reviewRoutes       = require('./review.routes')
 
 router.use('/auth',          authRoutes)
 router.use('/trips',         tripRoutes)
@@ -16,6 +17,7 @@ router.use('/users',         userRoutes)
 router.use('/notifications', notificationRoutes)
 router.use('/subscriptions', subscriptionRoutes)
 router.use('/search',        searchRoutes)
+router.use('/reviews',       reviewRoutes)
 
 // Health check
 router.get('/health', (req, res) => {
