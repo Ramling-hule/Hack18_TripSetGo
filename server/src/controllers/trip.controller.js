@@ -205,3 +205,88 @@ exports.cloneTrip = asyncHandler(async (req, res) => {
 
   created(res, clone, 'Trip cloned')
 })
+
+// ── POST /api/v1/trips/:id/share — Generate shareable public link ────────
+
+exports.shareTrip = asyncHandler(async (req, res) => {
+  const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id })
+  if (!trip) return notFound(res, 'Trip not found')
+
+  // Make the trip public so the link is accessible
+  if (!trip.isPublic) {
+    trip.isPublic = true
+    await trip.save()
+  }
+
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173'
+  const shareUrl  = `${clientUrl}/trips/${trip._id}`
+
+  success(res, { shareUrl, isPublic: true }, 'Trip is now public and shareable')
+})
+
+// ── PUT /api/v1/trips/:id/itinerary — Save full itinerary ───────────────
+
+exports.saveItinerary = asyncHandler(async (req, res) => {
+  const { itinerary } = req.body
+  const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id })
+  if (!trip) return notFound(res, 'Trip not found')
+
+  trip.itinerary = itinerary
+  await trip.save()
+
+  success(res, trip, 'Itinerary saved successfully')
+})
+
+// ── POST /api/v1/trips/:id/itinerary/day — Add a day to itinerary ───────
+
+exports.addItineraryDay = asyncHandler(async (req, res) => {
+  const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id })
+  if (!trip) return notFound(res, 'Trip not found')
+
+  const { day, date, activities } = req.body
+
+  // Prevent duplicate day numbers
+  const existing = trip.itinerary.find(d => d.day === day)
+  if (existing) return badRequest(res, `Day ${day} already exists in your itinerary. Use PUT to update it.`)
+
+  trip.itinerary.push({ day, date, activities: activities || [] })
+  trip.itinerary.sort((a, b) => a.day - b.day) // Keep sorted by day
+  await trip.save()
+
+  success(res, trip, `Day ${day} added to itinerary`)
+})
+
+// ── PUT /api/v1/trips/:id/itinerary/day/:day — Update a specific day ────
+
+exports.updateItineraryDay = asyncHandler(async (req, res) => {
+  const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id })
+  if (!trip) return notFound(res, 'Trip not found')
+
+  const dayNum = parseInt(req.params.day, 10)
+  const dayEntry = trip.itinerary.find(d => d.day === dayNum)
+  if (!dayEntry) return notFound(res, `Day ${dayNum} not found in itinerary`)
+
+  if (req.body.date       !== undefined) dayEntry.date       = req.body.date
+  if (req.body.activities !== undefined) dayEntry.activities = req.body.activities
+
+  trip.markModified('itinerary')
+  await trip.save()
+
+  success(res, trip, `Day ${dayNum} updated`)
+})
+
+// ── DELETE /api/v1/trips/:id/itinerary/day/:day — Remove a specific day ─
+
+exports.deleteItineraryDay = asyncHandler(async (req, res) => {
+  const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id })
+  if (!trip) return notFound(res, 'Trip not found')
+
+  const dayNum = parseInt(req.params.day, 10)
+  const index  = trip.itinerary.findIndex(d => d.day === dayNum)
+  if (index === -1) return notFound(res, `Day ${dayNum} not found in itinerary`)
+
+  trip.itinerary.splice(index, 1)
+  await trip.save()
+
+  success(res, trip, `Day ${dayNum} removed from itinerary`)
+})
