@@ -7,6 +7,7 @@ const Notification = require('../models/Notification.model')
 const { generateTripPlan } = require('../services/gemini.service')
 const fallback     = require('../planning/fallbackPlanner')
 const cacheService = require('../services/cache.service')
+const { logActivity } = require('../services/recommendation.service')
 const { success, created, notFound, badRequest, forbidden, unauthorized } = require('../utils/response')
 const asyncHandler = require('../utils/asyncHandler')
 const logger       = require('../utils/logger')
@@ -70,6 +71,14 @@ exports.createTrip = asyncHandler(async (req, res) => {
   cacheService.flushMany('destinations:feed', 'destinations:trending').catch((err) =>
     logger.warn(`[Cache] Feed/trending invalidation failed: ${err.message}`)
   )
+
+  // Log trip_create activity for recommendation engine (fire-and-forget)
+  logActivity(req.user._id, 'trip_create', null, null, {
+    destination,
+    source,
+    groupType: groupType || 'solo',
+    budget:    Number(budget),
+  })
 
   created(res, { plan: planData, tripId: trip._id, usedFallback }, 'Trip plan generated')
 })
@@ -249,6 +258,11 @@ exports.cloneTrip = asyncHandler(async (req, res) => {
   await original.save()
   req.user.tripsCount += 1
   await req.user.save()
+
+  // Log trip_clone activity for recommendation engine (fire-and-forget)
+  logActivity(req.user._id, 'trip_clone', 'Trip', original._id, {
+    destination: original.destination,
+  })
 
   created(res, clone, 'Trip cloned')
 })

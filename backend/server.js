@@ -33,11 +33,46 @@ process.on('uncaughtException', (err) => {
 })
 
 // Connect to MongoDB & Start Server
-connectDB().then(() => {
+connectDB().then(async () => {
+  // ── Elasticsearch bootstrap (non-fatal) ─────────────────────────────────
+  // Register Mongoose ↔ ES sync hooks (must run after DB models are loaded)
+  require('./src/services/es.sync')
+
+  const { pingElasticsearch }   = require('./src/config/elasticsearch')
+  const { createIndices }       = require('./src/services/elasticsearch.service')
+
+  const esReachable = await pingElasticsearch()
+  if (esReachable) {
+    await createIndices()
+    logger.info('🔍 Elasticsearch indices ready')
+  }
+  // ───────────────────────────────────────────────────────────────────────
+
   server.listen(PORT, () => {
     logger.info(`🚀 TripSetGo Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`)
   })
+
+  // ── Recommendation Engine — Trending Cron (30 min) ─────────────────────
+  // Run an initial computation shortly after boot (allow Redis to connect first),
+  // then repeat every 30 minutes.
+  const { computeTrending } = require('./src/services/recommendation.service')
+  const TRENDING_INTERVAL_MS = 30 * 60 * 1000  // 30 minutes
+
+  const runTrendingRefresh = () => {
+    computeTrending()
+      .then(() => logger.info('📈 Trending scores refreshed'))
+      .catch(err => logger.error(`[Rec] Trending cron failed: ${err.message}`))
+  }
+
+  // Delay first run by 10s to let Redis finish connecting
+  setTimeout(() => {
+    runTrendingRefresh()
+    setInterval(runTrendingRefresh, TRENDING_INTERVAL_MS)
+    logger.info(`📈 Trending cron scheduled — runs every ${TRENDING_INTERVAL_MS / 60000} min`)
+  }, 10_000)
+  // ───────────────────────────────────────────────────────────────────────
 })
+
 
 // Handle Unhandled Rejections
 process.on('unhandledRejection', (err) => {
