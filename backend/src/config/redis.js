@@ -43,6 +43,10 @@ const connectRedis = async () => {
 
     await redisClient.connect()
 
+    // Expose raw ioredis client globally so recommendation service
+    // can use ZADD / ZREVRANGE / ZREMRANGEBYRANK directly
+    global.__redisClient = redisClient
+
     redisClient.on('ready', () => {
       logger.info('🚀 Connected to Redis Cloud (AWS) successfully')
       useMemoryFallback = false

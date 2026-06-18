@@ -6,6 +6,7 @@ const Attraction = require('../models/Attraction.model')
 const { success, notFound, badRequest } = require('../utils/response')
 const asyncHandler = require('../utils/asyncHandler')
 const { uploadImageBuffer } = require('../services/cloudinary.service')
+const { logActivity } = require('../services/recommendation.service')
 
 // Helper to recalculate average rating for a target
 const recalculateAverageRating = async (targetType, targetId) => {
@@ -41,6 +42,10 @@ exports.addReview = asyncHandler(async (req, res) => {
   })
 
   await recalculateAverageRating(targetType, targetId)
+
+  // Log activity for recommendation engine (fire-and-forget)
+  logActivity(req.user._id, 'review', targetType, targetId, { rating })
+
   success(res, review, 'Review created successfully', 201)
 })
 

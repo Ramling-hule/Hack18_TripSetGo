@@ -51,7 +51,28 @@ connectDB().then(async () => {
   server.listen(PORT, () => {
     logger.info(`🚀 TripSetGo Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`)
   })
+
+  // ── Recommendation Engine — Trending Cron (30 min) ─────────────────────
+  // Run an initial computation shortly after boot (allow Redis to connect first),
+  // then repeat every 30 minutes.
+  const { computeTrending } = require('./src/services/recommendation.service')
+  const TRENDING_INTERVAL_MS = 30 * 60 * 1000  // 30 minutes
+
+  const runTrendingRefresh = () => {
+    computeTrending()
+      .then(() => logger.info('📈 Trending scores refreshed'))
+      .catch(err => logger.error(`[Rec] Trending cron failed: ${err.message}`))
+  }
+
+  // Delay first run by 10s to let Redis finish connecting
+  setTimeout(() => {
+    runTrendingRefresh()
+    setInterval(runTrendingRefresh, TRENDING_INTERVAL_MS)
+    logger.info(`📈 Trending cron scheduled — runs every ${TRENDING_INTERVAL_MS / 60000} min`)
+  }, 10_000)
+  // ───────────────────────────────────────────────────────────────────────
 })
+
 
 // Handle Unhandled Rejections
 process.on('unhandledRejection', (err) => {

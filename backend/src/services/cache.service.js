@@ -30,6 +30,9 @@ const TTL = {
   'search:nearby':         600,   // 10 min
   'search:es':             300,   // 5 min  ← Elasticsearch results
   'itinerary':             3600,  // 60 min
+  'rec:similar':           1800,  // 30 min ← similar destinations
+  'rec:trending':          600,   // 10 min ← trending leaderboard API
+  'rec:personalized':      300,   // 5 min  ← user-specific recs
   'default':               300,   // 5 min
 }
 
