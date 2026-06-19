@@ -7,6 +7,8 @@ const { success, notFound, badRequest } = require('../utils/response')
 const asyncHandler = require('../utils/asyncHandler')
 const { uploadImageBuffer } = require('../services/cloudinary.service')
 const { logActivity } = require('../services/recommendation.service')
+const notifService = require('../services/notification.service')
+const logger = require('../utils/logger')
 
 // Helper to recalculate average rating for a target
 const recalculateAverageRating = async (targetType, targetId) => {
@@ -45,6 +47,30 @@ exports.addReview = asyncHandler(async (req, res) => {
 
   // Log activity for recommendation engine (fire-and-forget)
   logActivity(req.user._id, 'review', targetType, targetId, { rating })
+
+  // ── Notification: new_review ──────────────────────────────────────────
+  // Resolve place name, then fire notification (fire-and-forget)
+  ;(async () => {
+    try {
+      let PlaceModel
+      if (targetType === 'Hotel')      PlaceModel = Hotel
+      else if (targetType === 'Restaurant') PlaceModel = Restaurant
+      else if (targetType === 'Attraction') PlaceModel = Attraction
+
+      const place     = PlaceModel ? await PlaceModel.findById(targetId).select('name').lean() : null
+      const placeName = place?.name || targetType
+
+      await notifService.notifyNewReview({
+        review,
+        actor:       req.user,
+        placeName,
+        io:          req.io,
+        activeUsers: req.activeUsers,
+      })
+    } catch (err) {
+      logger.warn(`[Notif] new_review dispatch error: ${err.message}`)
+    }
+  })()
 
   success(res, review, 'Review created successfully', 201)
 })

@@ -1,23 +1,43 @@
-// src/services/api.js — Axios instance with JWT interceptors
+// src/services/api.js — Axios instance with JWT + CSRF interceptors
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '')
+    : 'http://localhost:5001',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// ── Request interceptor: attach access token ──────────────────────────────
+// ── Helper: read a cookie value by name ──────────────────────────────────────
+const getCookie = (name) => {
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+  return match ? decodeURIComponent(match[1]) : null
+}
+
+// ── Request interceptor: attach access token + CSRF header ───────────────────
+// The backend sets a `csrfToken` cookie on every GET response (httpOnly: false).
+// For all mutating requests (POST/PUT/PATCH/DELETE) we read that cookie and
+// echo it back in the `x-csrf-token` header — this is the double-submit pattern.
 api.interceptors.request.use(
   (config) => {
+    // 1. JWT access token
     const token = localStorage.getItem('accessToken')
     if (token) config.headers.Authorization = `Bearer ${token}`
+
+    // 2. CSRF token — required for all mutating requests
+    const safeMethods = ['GET', 'HEAD', 'OPTIONS']
+    if (!safeMethods.includes((config.method || '').toUpperCase())) {
+      const csrfToken = getCookie('csrfToken')
+      if (csrfToken) config.headers['x-csrf-token'] = csrfToken
+    }
+
     return config
   },
   (error) => Promise.reject(error)
 )
 
-// ── Response interceptor: refresh token on 401 ───────────────────────────
+// ── Response interceptor: refresh token on 401 ───────────────────────────────
 let isRefreshing = false
 let failedQueue = []
 
@@ -50,10 +70,16 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
+        const baseUrl = import.meta.env.VITE_API_URL
+          ? import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '')
+          : 'http://localhost:5001'
         const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/auth/refresh`,
+          `${baseUrl}/api/v1/auth/refresh`,
           {},
-          { withCredentials: true }
+          {
+            withCredentials: true,
+            headers: { 'x-csrf-token': getCookie('csrfToken') || '' },
+          }
         )
         const newToken = data.data.accessToken
         localStorage.setItem('accessToken', newToken)

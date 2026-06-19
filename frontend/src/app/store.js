@@ -6,6 +6,7 @@ import tripsReducer        from '@/features/trips/tripsSlice'
 import discoverReducer     from '@/features/discover/discoverSlice'
 import notificationsReducer from '@/features/notifications/notificationsSlice'
 import subscriptionReducer from '@/features/subscription/subscriptionSlice'
+import adminReducer        from '@/features/admin/adminSlice'
 
 const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ const store = configureStore({
     discover:      discoverReducer,
     notifications: notificationsReducer,
     subscription:  subscriptionReducer,
+    admin:         adminReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -8,6 +8,7 @@ const { generateTripPlan } = require('../services/gemini.service')
 const fallback     = require('../planning/fallbackPlanner')
 const cacheService = require('../services/cache.service')
 const { logActivity } = require('../services/recommendation.service')
+const notifService = require('../services/notification.service')
 const { success, created, notFound, badRequest, forbidden, unauthorized } = require('../utils/response')
 const asyncHandler = require('../utils/asyncHandler')
 const logger       = require('../utils/logger')
@@ -273,8 +274,10 @@ exports.shareTrip = asyncHandler(async (req, res) => {
   const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id })
   if (!trip) return notFound(res, 'Trip not found')
 
+  const wasAlreadyPublic = trip.isPublic
+
   // Make the trip public so the link is accessible
-  if (!trip.isPublic) {
+  if (!wasAlreadyPublic) {
     trip.isPublic = true
     await trip.save()
   }
@@ -283,10 +286,20 @@ exports.shareTrip = asyncHandler(async (req, res) => {
   const shareUrl  = `${clientUrl}/trips/${trip._id}`
 
   // Trip is now public — invalidate discovery caches
-  if (!trip.isPublic) {
+  if (!wasAlreadyPublic) {
     cacheService.flushMany('destinations:feed', 'destinations:trending').catch((err) =>
       logger.warn(`[Cache] Feed/trending invalidation on share failed: ${err.message}`)
     )
+
+    // ── Notification: trip_shared ────────────────────────────────────────
+    // Notify all accepted collaborators (fire-and-forget, never blocks response)
+    notifService.notifyTripShared({
+      trip,
+      actor:       req.user,
+      shareUrl,
+      io:          req.io,
+      activeUsers: req.activeUsers,
+    }).catch((err) => logger.warn(`[Notif] trip_shared dispatch error: ${err.message}`))
   }
 
   success(res, { shareUrl, isPublic: true }, 'Trip is now public and shareable')
@@ -308,8 +321,17 @@ exports.saveItinerary = asyncHandler(async (req, res) => {
   trip.itinerary = itinerary
   await trip.save()
 
-  // Notify socket room
+  // Notify socket room (real-time collaborative editing)
   req.io.to(`trip_room:${trip._id}`).emit('itinerary_updated', { tripId: trip._id })
+
+  // ── Notification: itinerary_updated ──────────────────────────────────
+  notifService.notifyItineraryUpdated({
+    trip,
+    actor:       req.user,
+    changeDesc:  'Full itinerary replaced',
+    io:          req.io,
+    activeUsers: req.activeUsers,
+  }).catch((err) => logger.warn(`[Notif] itinerary_updated dispatch error: ${err.message}`))
 
   success(res, trip, 'Itinerary saved successfully')
 })
@@ -336,8 +358,17 @@ exports.addItineraryDay = asyncHandler(async (req, res) => {
   trip.itinerary.sort((a, b) => a.day - b.day) // Keep sorted by day
   await trip.save()
 
-  // Notify socket room
+  // Notify socket room (real-time collaborative editing)
   req.io.to(`trip_room:${trip._id}`).emit('itinerary_updated', { tripId: trip._id })
+
+  // ── Notification: itinerary_updated ──────────────────────────────────
+  notifService.notifyItineraryUpdated({
+    trip,
+    actor:       req.user,
+    changeDesc:  `Day ${day} added to the itinerary`,
+    io:          req.io,
+    activeUsers: req.activeUsers,
+  }).catch((err) => logger.warn(`[Notif] itinerary_updated dispatch error: ${err.message}`))
 
   success(res, trip, `Day ${day} added to itinerary`)
 })
@@ -364,8 +395,17 @@ exports.updateItineraryDay = asyncHandler(async (req, res) => {
   trip.markModified('itinerary')
   await trip.save()
 
-  // Notify socket room
+  // Notify socket room (real-time collaborative editing)
   req.io.to(`trip_room:${trip._id}`).emit('itinerary_updated', { tripId: trip._id })
+
+  // ── Notification: itinerary_updated ──────────────────────────────────
+  notifService.notifyItineraryUpdated({
+    trip,
+    actor:       req.user,
+    changeDesc:  `Day ${dayNum} updated`,
+    io:          req.io,
+    activeUsers: req.activeUsers,
+  }).catch((err) => logger.warn(`[Notif] itinerary_updated dispatch error: ${err.message}`))
 
   success(res, trip, `Day ${dayNum} updated`)
 })
