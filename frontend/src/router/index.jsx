@@ -3,7 +3,7 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { selectIsAuthenticated } from '@/features/auth/authSlice'
+import { selectIsAuthenticated, selectUser } from '@/features/auth/authSlice'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Loader from '@/components/common/Loader'
 
@@ -27,6 +27,13 @@ const MapPage      = lazy(() => import('@/pages/Dashboard/Map'))
 const TripDetail   = lazy(() => import('@/pages/TripDetail'))
 const NotFound     = lazy(() => import('@/pages/NotFound'))
 
+// Admin views
+const AdminAnalytics    = lazy(() => import('@/pages/Dashboard/Admin/Analytics'))
+const AdminUsers          = lazy(() => import('@/pages/Dashboard/Admin/Users'))
+const AdminReviews        = lazy(() => import('@/pages/Dashboard/Admin/Reviews'))
+const AdminDestinations   = lazy(() => import('@/pages/Dashboard/Admin/Destinations'))
+const AdminReports        = lazy(() => import('@/pages/Dashboard/Admin/Reports'))
+
 // Route guards
 function PrivateRoute({ children }) {
   const isAuth = useSelector(selectIsAuthenticated)
@@ -35,6 +42,13 @@ function PrivateRoute({ children }) {
 function PublicOnly({ children }) {
   const isAuth = useSelector(selectIsAuthenticated)
   return isAuth ? <Navigate to="/dashboard" replace /> : children
+}
+function AdminRoute({ children }) {
+  const isAuth = useSelector(selectIsAuthenticated)
+  const user = useSelector(selectUser)
+  if (!isAuth) return <Navigate to="/auth/login" replace />
+  if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />
+  return children
 }
 
 const Wrap = ({ element }) => <Suspense fallback={<Loader fullScreen text="Loading..." />}>{element}</Suspense>
@@ -65,6 +79,18 @@ export const router = createBrowserRouter([
       { path: 'notifications',       element: <Wrap element={<Notifications />} /> },
       { path: 'profile',             element: <Wrap element={<Profile />} /> },
       { path: 'map',                 element: <Wrap element={<MapPage />} /> },
+      
+      // Admin dashboard sub-routes
+      {
+        path: 'admin',
+        children: [
+          { index: true,             element: <Wrap element={<AdminRoute><AdminAnalytics /></AdminRoute>} /> },
+          { path: 'users',           element: <Wrap element={<AdminRoute><AdminUsers /></AdminRoute>} /> },
+          { path: 'reviews',         element: <Wrap element={<AdminRoute><AdminReviews /></AdminRoute>} /> },
+          { path: 'destinations',    element: <Wrap element={<AdminRoute><AdminDestinations /></AdminRoute>} /> },
+          { path: 'reports',         element: <Wrap element={<AdminRoute><AdminReports /></AdminRoute>} /> },
+        ]
+      }
     ],
   },
   // Top-level discover page (public)

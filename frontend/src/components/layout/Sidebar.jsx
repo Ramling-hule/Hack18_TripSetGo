@@ -1,8 +1,11 @@
 // src/components/layout/Sidebar.jsx
 import { NavLink } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { selectUser } from '@/features/auth/authSlice'
 import {
   LayoutDashboard, Map, Compass, Briefcase,
   Receipt, BarChart3, CreditCard, Bell, User, MapPin,
+  Users, MessageSquare, ShieldCheck, Terminal
 } from 'lucide-react'
 
 const navItems = [
@@ -18,7 +21,18 @@ const navItems = [
   { icon: <User size={18} />,            label: 'Profile',      to: '/dashboard/profile' },
 ]
 
+const adminNavItems = [
+  { icon: <LayoutDashboard size={18} />, label: 'Overview',     to: '/dashboard/admin' },
+  { icon: <Users size={18} />,           label: 'Users',        to: '/dashboard/admin/users' },
+  { icon: <MessageSquare size={18} />,   label: 'Reviews',      to: '/dashboard/admin/reviews' },
+  { icon: <MapPin size={18} />,          label: 'Destinations', to: '/dashboard/admin/destinations' },
+  { icon: <Terminal size={18} />,        label: 'Audit Logs',   to: '/dashboard/admin/reports' },
+]
+
 export default function Sidebar({ isOpen = false }) {
+  const user = useSelector(selectUser)
+  const isAdmin = user?.role === 'admin'
+
   return (
     <aside
       className={`dashboard-sidebar${isOpen ? ' sidebar-open' : ''}`}
@@ -53,6 +67,25 @@ export default function Sidebar({ isOpen = false }) {
           {label}
         </NavLink>
       ))}
+
+      {isAdmin && (
+        <>
+          <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 0.875rem', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
+            Admin Console
+          </p>
+          {adminNavItems.map(({ icon, label, to }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/dashboard/admin'}
+              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+            >
+              <span style={{ flexShrink: 0 }}>{icon}</span>
+              {label}
+            </NavLink>
+          ))}
+        </>
+      )}
     </aside>
   )
 }
