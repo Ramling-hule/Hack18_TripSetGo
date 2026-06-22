@@ -8,6 +8,7 @@ import { fetchMyTrips, deleteTrip, likeTrip, cloneTrip, shareTrip, selectTrips, 
 import { selectUser } from '@/features/auth/authSlice'
 import api from '@/services/api'
 import { SkeletonCard } from '@/components/common/Loader'
+import { getDestinationImage } from './Discover'
 
 export default function MyTrips() {
   const dispatch       = useDispatch()
@@ -99,43 +100,49 @@ export default function MyTrips() {
           const isPending = selfCollab?.status === 'pending'
           const role = selfCollab?.role || 'editor'
 
+          const coverImg = getDestinationImage(trip.destination || '')
+
           return (
             <motion.div key={trip._id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-              className="card card-hover" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
+              className="card card-hover" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', padding: 0, overflow: 'hidden' }}>
               
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.375rem' }}>
-                  <p style={{ fontWeight: 700, fontSize: '1.0625rem' }}>{trip.destination}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{trip.planData?.meta?.total_days}d</span>
-                    
-                    {/* Only allow viewing if invitation is accepted */}
-                    {!isPending ? (
-                      <Link to={`/trips/${trip._id}`} title="View full trip" style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center' }}>
+                {/* Destination Photo Header */}
+                <div style={{ height: 110, background: `url(${coverImg}) center center/cover no-repeat`, display: 'flex', alignItems: 'flex-end', padding: '1rem', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(17, 24, 39, 0.95) 0%, rgba(17, 24, 39, 0.1) 100%)' }} />
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
+                    <div>
+                      <p style={{ fontWeight: 800, fontSize: '1.0625rem', color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.8)', margin: 0 }}>{trip.destination}</p>
+                      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.75rem', textShadow: '0 1px 2px rgba(0,0,0,0.8)', margin: 0 }}>
+                        from {trip.source} • {trip.planData?.meta?.total_days || 0}d
+                      </p>
+                    </div>
+                    {!isPending && (
+                      <Link to={`/trips/${trip._id}`} title="View full trip" style={{ color: 'white', background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <ExternalLink size={13} />
                       </Link>
-                    ) : (
-                      <span className="badge badge-amber" style={{ fontSize: '0.6rem' }}>Pending Invite</span>
                     )}
                   </div>
                 </div>
-                
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
-                  from {trip.source} • {trip.numTravelers} traveler{trip.numTravelers > 1 ? 's' : ''}
-                </p>
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
-                  Budget: ₹{Number(trip.budget).toLocaleString()}
-                </p>
 
-                {!isOwned && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--color-accent-primary)' }}>
-                    <Users size={12} />
-                    <span>Owner: {trip.userId?.name}</span>
-                    <span style={{ textTransform: 'capitalize', background: 'rgba(129, 140, 248, 0.1)', padding: '1px 6px', borderRadius: 4, fontSize: '0.7rem' }}>
-                      {role}
-                    </span>
-                  </div>
-                )}
+                <div style={{ padding: '1.25rem 1.25rem 0' }}>
+                  <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
+                    👥 {trip.numTravelers} traveler{trip.numTravelers > 1 ? 's' : ''}
+                  </p>
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
+                    Budget: ₹{Number(trip.budget).toLocaleString()}
+                  </p>
+
+                  {!isOwned && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--color-accent-primary)' }}>
+                      <Users size={12} />
+                      <span>Owner: {trip.userId?.name}</span>
+                      <span style={{ textTransform: 'capitalize', background: 'rgba(129, 140, 248, 0.1)', padding: '1px 6px', borderRadius: 4, fontSize: '0.7rem' }}>
+                        {role}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {trip.tags?.length > 0 && (
