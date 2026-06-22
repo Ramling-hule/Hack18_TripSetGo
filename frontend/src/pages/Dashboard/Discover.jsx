@@ -12,33 +12,64 @@ import Input from '@/components/common/Input'
 import { SkeletonCard } from '@/components/common/Loader'
 import { useDebounce } from '@/hooks/useDebounce'
 
-const CARD_GRADIENTS = [
-  'linear-gradient(135deg, #6366f1, #8b5cf6)',
-  'linear-gradient(135deg, #06b6d4, #6366f1)',
-  'linear-gradient(135deg, #10b981, #06b6d4)',
-  'linear-gradient(135deg, #f59e0b, #ef4444)',
-  'linear-gradient(135deg, #8b5cf6, #ec4899)',
-  'linear-gradient(135deg, #14b8a6, #6366f1)',
+const DESTINATION_IMAGES = {
+  bali: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80',
+  indonesia: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80',
+  goa: 'https://images.unsplash.com/photo-1587922497906-b9d37855b40d?auto=format&fit=crop&w=400&q=80',
+  kerala: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=400&q=80',
+  manali: 'https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=400&q=80',
+  switzerland: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80',
+  swiss: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80',
+  alps: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80',
+  paris: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=400&q=80',
+  france: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=400&q=80',
+  tokyo: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=400&q=80',
+  japan: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=400&q=80',
+  london: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=400&q=80',
+  uk: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=400&q=80',
+  rome: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=400&q=80',
+  italy: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=400&q=80',
+  maldives: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=400&q=80',
+  sydney: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=400&q=80',
+  australia: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=400&q=80',
+  dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=400&q=80',
+  uae: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=400&q=80',
+  santorini: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=400&q=80',
+  greece: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=400&q=80',
+  hawaii: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+  usa: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=400&q=80',
+  newyork: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=400&q=80',
+}
+
+const GENERAL_IMAGES = [
+  'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=400&q=80',
 ]
 
-function getCardGradient(str) {
+export function getDestinationImage(destination = '') {
+  const norm = destination.toLowerCase().replace(/[^a-z0-9]/g, '')
+  for (const [key, url] of Object.entries(DESTINATION_IMAGES)) {
+    if (norm.includes(key)) return url
+  }
   let hash = 0
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
-  return CARD_GRADIENTS[Math.abs(hash) % CARD_GRADIENTS.length]
+  for (let i = 0; i < destination.length; i++) hash = destination.charCodeAt(i) + ((hash << 5) - hash)
+  return GENERAL_IMAGES[Math.abs(hash) % GENERAL_IMAGES.length]
 }
 
 function TripCard({ trip }) {
   const dispatch = useDispatch()
-  const gradient = getCardGradient(trip.destination || '')
+  const coverImg = getDestinationImage(trip.destination || '')
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
       className="card card-hover" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {/* Destination gradient header */}
-      <div style={{ height: 120, borderRadius: 'var(--radius-md)', background: gradient, display: 'flex', alignItems: 'flex-end', padding: '1rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} />
+      {/* Destination photo header */}
+      <div style={{ height: 120, borderRadius: 'var(--radius-md)', background: `url(${coverImg}) center center/cover no-repeat`, display: 'flex', alignItems: 'flex-end', padding: '1rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8, 17, 34, 0.9) 0%, rgba(8, 17, 34, 0.2) 100%)' }} />
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <p style={{ fontWeight: 800, fontSize: '1.125rem' }}>{trip.destination}</p>
-          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem' }}>from {trip.source}</p>
+          <p style={{ fontWeight: 800, fontSize: '1.125rem', color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{trip.destination}</p>
+          <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>from {trip.source}</p>
         </div>
       </div>
       {/* Content */}

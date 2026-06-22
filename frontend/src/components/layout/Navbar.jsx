@@ -67,40 +67,12 @@ export default function Navbar({ onMenuClick }) {
         </span>
       </Link>
 
-      {/* Nav links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-        {isAuth && (
-          <>
-            <Link to="/dashboard" className="btn btn-ghost btn-sm">Dashboard</Link>
-            <Link to="/dashboard/planner" className="btn btn-ghost btn-sm">Plan Trip</Link>
-            <Link to="/discover" className="btn btn-ghost btn-sm">Discover</Link>
-          </>
-        )}
-      </div>
+      {/* Nav links (Stripted out per design guidelines) */}
 
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {isAuth ? (
           <>
-            {/* Notifications */}
-            <Link to="/dashboard/notifications" style={{ position: 'relative', display: 'flex', padding: '0.5rem', color: 'var(--color-text-secondary)', transition: 'all 0.2s', borderRadius: '50%' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-text-primary)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.background = 'transparent' }}>
-              <Bell size={20} />
-              {unread > 0 && (
-                <span className="animate-pulse" style={{
-                  position: 'absolute', top: 0, right: 0,
-                  width: 16, height: 16,
-                  background: 'var(--color-accent-red)',
-                  borderRadius: '50%',
-                  fontSize: '0.625rem', fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white',
-                  boxShadow: '0 0 10px rgba(239, 68, 68, 0.6)'
-                }}>
-                  {unread > 9 ? '9+' : unread}
-                </span>
-              )}
-            </Link>
-
             {/* User dropdown */}
             <div style={{ position: 'relative' }}>
               <button
@@ -117,37 +89,34 @@ export default function Navbar({ onMenuClick }) {
               {dropOpen && (
                 <div className="glass animate-fadeIn" style={{
                   position: 'absolute', top: '110%', right: 0,
-                  width: 220, borderRadius: 'var(--radius-md)',
+                  width: 200, borderRadius: 'var(--radius-md)',
                   padding: '0.5rem',
                   boxShadow: 'var(--shadow-card)',
                   zIndex: 100,
                   transformOrigin: 'top right'
                 }}>
                   <div style={{ padding: '0.5rem 0.75rem 0.75rem', borderBottom: '1px solid var(--color-border)', marginBottom: '0.5rem' }}>
-                    <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{user?.name}</p>
-                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>{user?.email}</p>
+                    <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{user?.name}</p>
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>
                   </div>
-                  {[
-                    { icon: <User size={15} />, label: 'Profile', to: '/dashboard/profile' },
-                    { icon: <CreditCard size={15} />, label: 'Subscription', to: '/dashboard/subscription' },
-                    { icon: <Settings size={15} />, label: 'Settings', to: '/dashboard/profile' },
-                  ].map(item => (
-                    <Link key={item.label} to={item.to} onClick={() => setDropOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', color: 'var(--color-text-secondary)', textDecoration: 'none', fontSize: '0.875rem', transition: 'all 0.15s' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
-                    >
-                      {item.icon} {item.label}
-                    </Link>
-                  ))}
-                  <div style={{ borderTop: '1px solid var(--color-border)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
-                    <button
-                      onClick={handleLogout}
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-accent-red)', fontSize: '0.875rem' }}
-                    >
-                      <LogOut size={15} /> Logout
-                    </button>
-                  </div>
+                  
+                  {/* Exactly 2 Dropdown options: Profile & Logout */}
+                  <Link to="/dashboard/profile" onClick={() => setDropOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', color: 'var(--color-text-secondary)', textDecoration: 'none', fontSize: '0.875rem', transition: 'all 0.15s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
+                  >
+                    <User size={15} /> Profile
+                  </Link>
+
+                  <button
+                    onClick={() => { setDropOpen(false); handleLogout(); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-accent-red)', fontSize: '0.875rem', transition: 'all 0.15s', textAlign: 'left' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                  >
+                    <LogOut size={15} /> Logout
+                  </button>
                 </div>
               )}
             </div>
