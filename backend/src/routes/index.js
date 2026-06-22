@@ -15,6 +15,7 @@ const recommendationRoutes  = require('./recommendation.routes')
 const adminRoutes           = require('./admin.routes')
 const expenseRoutes         = require('./expense.routes')
 const copilotRoutes         = require('./copilot.routes')
+const travelRoutes          = require('./travel.routes')
 
 router.use('/auth',            authRoutes)
 router.use('/trips',           tripRoutes)
@@ -30,6 +31,7 @@ router.use('/recommendations', recommendationRoutes)
 router.use('/admin',           adminRoutes)
 router.use('/groups',          expenseRoutes)
 router.use('/copilot',         copilotRoutes)
+router.use('/travel',          travelRoutes)
 
 // Health check
 router.get('/health', (req, res) => {

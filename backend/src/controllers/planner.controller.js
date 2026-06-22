@@ -1,6 +1,7 @@
 // server/src/controllers/planner.controller.js
 const { generateDetailedPlan, regenerateItineraryDay } = require('../services/gemini.service')
 const fallback                   = require('../planning/fallbackPlanner')
+const travelApiService           = require('../services/travel/travelApi.service')
 const Subscription               = require('../models/Subscription.model')
 const cacheService               = require('../services/cache.service')
 const { success, created, badRequest } = require('../utils/response')
@@ -90,6 +91,10 @@ exports.generatePlan = asyncHandler(async (req, res) => {
 
   logger.info(`✅ Planner: Plan generated for "${input.destination}" (${usedFallback ? 'fallback' : 'Gemini'})`)
 
+  // --- Enrich plan with live travel API data (attractions, hotels, weather) ---
+  // Non-breaking: if travelApiService fails entirely, `plan` is returned unchanged.
+  plan = await travelApiService.enrichPlan(plan, input)
+
   // --- Cache the generated plan ---
   // Only cache Gemini-generated plans; fallback plans are cheap to regenerate.
   if (!usedFallback) {
@@ -100,6 +105,10 @@ exports.generatePlan = asyncHandler(async (req, res) => {
       logger.warn(`[Cache] Failed to store itinerary: ${err.message}`)
     }
   }
+
+  // --- Response headers for client-side observability ---
+  res.setHeader('X-Data-Source', plan._liveData ? 'live' : 'fallback')
+  res.setHeader('X-Enriched',    plan._liveData ? 'true' : 'false')
 
   created(res, { plan, usedFallback, destination: input.destination, days: input.days, budget: input.budget }, 'Travel plan generated successfully')
 })
