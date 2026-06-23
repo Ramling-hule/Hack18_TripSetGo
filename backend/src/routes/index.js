@@ -18,6 +18,7 @@ const copilotRoutes         = require('./copilot.routes')
 const travelRoutes          = require('./travel.routes')
 const attractionsRoutes     = require('./attractions.routes')
 const restaurantsRoutes     = require('./restaurants.routes')
+const weatherRoutes         = require('./weather.routes')
 
 router.use('/auth',            authRoutes)
 router.use('/trips',           tripRoutes)
@@ -36,6 +37,7 @@ router.use('/copilot',         copilotRoutes)
 router.use('/travel',          travelRoutes)
 router.use('/attractions',     attractionsRoutes)
 router.use('/restaurants',     restaurantsRoutes)
+router.use('/weather',         weatherRoutes)
 
 // Health check
 router.get('/health', (req, res) => {

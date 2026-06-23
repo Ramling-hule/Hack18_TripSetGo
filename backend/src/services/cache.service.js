@@ -34,6 +34,9 @@ const TTL = {
   'attractions:city':      900,   // 15 min  ← OTM city search results
   'attractions:nearby':    600,   // 10 min  ← OTM nearby search results
   'attractions:detail':    1800,  // 30 min  ← OTM full detail (with images + description)
+  // Weather (OWM free tier: 60 req/min; data changes every 10–60 min)
+  'weather:current':       600,   // 10 min  ← current conditions (changes quickly)
+  'weather:forecast':      3600,  // 60 min  ← 5-day forecast (stable for 1h)
   // Search
   'search:city':           900,   // 15 min
   'search:nearby':         600,   // 10 min
@@ -45,6 +48,7 @@ const TTL = {
   'rec:personalized':      300,   // 5 min  ← user-specific recs
   'default':               300,   // 5 min
 }
+
 
 
 /**
