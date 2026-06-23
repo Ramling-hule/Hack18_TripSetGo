@@ -24,20 +24,28 @@ const TTL = {
   'destinations:trending': 600,   // 10 min
   'destinations:feed':     300,   // 5 min
   'hotels':                1800,  // 30 min
-  'restaurants':           1800,  // 30 min
-  'attractions':           1800,  // 30 min  ← generic namespace (backward compat)
+  // Restaurants
+  'restaurants':           1800,  // 30 min  ← generic (backward compat)
+  'restaurants:city':      900,   // 15 min  ← FSQ city restaurant search
+  'restaurants:nearby':    600,   // 10 min  ← FSQ nearby restaurant search
+  'restaurants:detail':    2700,  // 45 min  ← FSQ full detail (hours, photos, menus)
+  // Attractions
+  'attractions':           1800,  // 30 min  ← generic (backward compat)
   'attractions:city':      900,   // 15 min  ← OTM city search results
   'attractions:nearby':    600,   // 10 min  ← OTM nearby search results
   'attractions:detail':    1800,  // 30 min  ← OTM full detail (with images + description)
+  // Search
   'search:city':           900,   // 15 min
   'search:nearby':         600,   // 10 min
   'search:es':             300,   // 5 min  ← Elasticsearch results
+  // Other
   'itinerary':             3600,  // 60 min
   'rec:similar':           1800,  // 30 min ← similar destinations
   'rec:trending':          600,   // 10 min ← trending leaderboard API
   'rec:personalized':      300,   // 5 min  ← user-specific recs
   'default':               300,   // 5 min
 }
+
 
 /**
  * Resolve TTL for a given namespace.
