@@ -24,17 +24,37 @@ const TTL = {
   'destinations:trending': 600,   // 10 min
   'destinations:feed':     300,   // 5 min
   'hotels':                1800,  // 30 min
-  'restaurants':           1800,  // 30 min
-  'attractions':           1800,  // 30 min
+  // Restaurants
+  'restaurants':           1800,  // 30 min  ← generic (backward compat)
+  'restaurants:city':      900,   // 15 min  ← FSQ city restaurant search
+  'restaurants:nearby':    600,   // 10 min  ← FSQ nearby restaurant search
+  'restaurants:detail':    2700,  // 45 min  ← FSQ full detail (hours, photos, menus)
+  // Attractions
+  'attractions':           1800,  // 30 min  ← generic (backward compat)
+  'attractions:city':      900,   // 15 min  ← OTM city search results
+  'attractions:nearby':    600,   // 10 min  ← OTM nearby search results
+  'attractions:detail':    1800,  // 30 min  ← OTM full detail (with images + description)
+  // Weather (OWM free tier: 60 req/min; data changes every 10–60 min)
+  'weather:current':       600,   // 10 min  ← current conditions (changes quickly)
+  'weather:forecast':      3600,  // 60 min  ← 5-day forecast (stable for 1h)
+  // Flights (Amadeus — static airport/airline data; volatile pricing)
+  'flights:airports':      86400, // 24 h    ← airport autocomplete (static IATA data)
+  'flights:search':        600,   // 10 min  ← flight offers (prices shift frequently)
+  'flights:airlines':      86400, // 24 h    ← airline name/details (static data)
+
+  // Search
   'search:city':           900,   // 15 min
   'search:nearby':         600,   // 10 min
   'search:es':             300,   // 5 min  ← Elasticsearch results
+  // Other
   'itinerary':             3600,  // 60 min
   'rec:similar':           1800,  // 30 min ← similar destinations
   'rec:trending':          600,   // 10 min ← trending leaderboard API
   'rec:personalized':      300,   // 5 min  ← user-specific recs
   'default':               300,   // 5 min
 }
+
+
 
 /**
  * Resolve TTL for a given namespace.
