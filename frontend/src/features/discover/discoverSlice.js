@@ -1,112 +1,154 @@
-// src/features/discover/discoverSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import api from '@/services/api'
+import { discoverApi } from './discoverApi'
+import { tripsApi } from '../trips/tripsApi'
 
-export const fetchFeed = createAsyncThunk('discover/fetchFeed', async ({ cursor, filters } = {}, { rejectWithValue }) => {
+// ── Async Thunk Wrappers for Backward Compatibility ──────────────────────────
+
+export const fetchFeed = createAsyncThunk('discover/fetchFeed', async ({ cursor, filters } = {}, { dispatch, rejectWithValue }) => {
   try {
-    const params = { limit: 12, ...(cursor ? { cursor } : {}), ...filters }
-    const res = await api.get('/api/v1/discover/feed', { params })
-    return res.data.data
+    return await dispatch(discoverApi.endpoints.getFeed.initiate({ cursor, filters })).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to fetch feed')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to fetch feed')
   }
 })
 
-export const searchTrips = createAsyncThunk('discover/searchTrips', async ({ query, filters }, { rejectWithValue }) => {
+export const searchTrips = createAsyncThunk('discover/searchTrips', async ({ query, filters }, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.get('/api/v1/discover/search', { params: { q: query, ...filters } })
-    return res.data.data
+    return await dispatch(discoverApi.endpoints.searchTrips.initiate({ query, filters })).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Search failed')
+    return rejectWithValue(err.data?.message || err.message || 'Search failed')
   }
 })
 
-export const fetchTrending = createAsyncThunk('discover/fetchTrending', async (_, { rejectWithValue }) => {
+export const fetchTrending = createAsyncThunk('discover/fetchTrending', async (_, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.get('/api/v1/discover/trending')
-    return res.data.data
+    return await dispatch(discoverApi.endpoints.getTrending.initiate()).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to fetch trending')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to fetch trending')
   }
 })
 
-export const discoverLikeTrip = createAsyncThunk('discover/likeTrip', async (id, { rejectWithValue }) => {
+export const discoverLikeTrip = createAsyncThunk('discover/likeTrip', async (id, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post(`/api/v1/trips/${id}/like`)
-    return { id, ...res.data.data }
+    const res = await dispatch(tripsApi.endpoints.likeTrip.initiate(id)).unwrap()
+    return { id, ...res }
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message)
+    return rejectWithValue(err.data?.message || err.message || 'Failed to like trip')
   }
 })
 
-export const discoverSaveTrip = createAsyncThunk('discover/saveTrip', async (id, { rejectWithValue }) => {
+export const discoverSaveTrip = createAsyncThunk('discover/saveTrip', async (id, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post(`/api/v1/trips/${id}/save`)
-    return { id, ...res.data.data }
+    const res = await dispatch(tripsApi.endpoints.saveTrip.initiate(id)).unwrap()
+    return { id, ...res }
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message)
+    return rejectWithValue(err.data?.message || err.message || 'Failed to save trip')
   }
 })
+
+const initialState = {
+  feed: [],
+  trending: [],
+  searchResults: null,
+  cursor: null,
+  hasMore: true,
+  filters: {
+    destination: '',
+    minBudget: '',
+    maxBudget: '',
+    groupType: '',
+    tags: [],
+    sortBy: 'latest',
+  },
+  searchQuery: '',
+  loading: false,
+  loadingMore: false,
+  error: null,
+}
 
 const discoverSlice = createSlice({
   name: 'discover',
-  initialState: {
-    feed: [],
-    trending: [],
-    searchResults: null,
-    cursor: null,
-    hasMore: true,
-    filters: {
-      destination: '',
-      minBudget: '',
-      maxBudget: '',
-      groupType: '',
-      tags: [],
-      sortBy: 'latest',
-    },
-    searchQuery: '',
-    loading: false,
-    loadingMore: false,
-    error: null,
-  },
+  initialState,
   reducers: {
-    setFilters: (state, action) => { state.filters = { ...state.filters, ...action.payload }; state.feed = []; state.cursor = null; state.hasMore = true },
-    setSearchQuery: (state, action) => { state.searchQuery = action.payload },
-    clearSearch: (state) => { state.searchResults = null; state.searchQuery = '' },
-    clearError: (state) => { state.error = null },
+    setFilters: (state, action) => {
+      state.filters = { ...state.filters, ...action.payload }
+      state.feed = []
+      state.cursor = null
+      state.hasMore = true
+    },
+    setSearchQuery: (state, action) => {
+      state.searchQuery = action.payload
+    },
+    clearSearch: (state) => {
+      state.searchResults = null
+      state.searchQuery = ''
+    },
+    clearError: (state) => {
+      state.error = null
+    },
   },
   extraReducers: (builder) => {
     builder
       // Feed
       .addCase(fetchFeed.pending, (state, action) => {
-        if (!action.meta.arg?.cursor) { state.loading = true; state.feed = [] }
-        else state.loadingMore = true
+        if (!action.meta.arg?.cursor) {
+          state.loading = true
+          state.feed = []
+        } else {
+          state.loadingMore = true
+        }
         state.error = null
       })
-      .addCase(fetchFeed.fulfilled, (state, { payload }) => {
+      .addCase(fetchFeed.fulfilled, (state, { payload, meta }) => {
         state.loading = false
         state.loadingMore = false
-        state.feed = state.cursor ? [...state.feed, ...payload.trips] : payload.trips
-        state.cursor  = payload.nextCursor
-        state.hasMore = payload.hasMore
+        const data = payload.data || payload
+        state.feed = meta.arg?.cursor ? [...state.feed, ...(data.trips || [])] : (data.trips || [])
+        state.cursor  = data.nextCursor
+        state.hasMore = data.hasMore
       })
       .addCase(fetchFeed.rejected, (state, { payload }) => {
-        state.loading = false; state.loadingMore = false; state.error = payload
+        state.loading = false
+        state.loadingMore = false
+        state.error = payload
       })
+
       // Search
-      .addCase(searchTrips.pending,   (state) => { state.loading = true })
-      .addCase(searchTrips.fulfilled, (state, { payload }) => { state.loading = false; state.searchResults = payload.trips })
-      .addCase(searchTrips.rejected,  (state, { payload }) => { state.loading = false; state.error = payload })
+      .addCase(searchTrips.pending, (state) => {
+        state.loading = true
+      })
+      .addCase(searchTrips.fulfilled, (state, { payload }) => {
+        state.loading = false
+        const data = payload.data || payload
+        state.searchResults = data.trips || []
+      })
+      .addCase(searchTrips.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = payload
+      })
+
       // Trending
-      .addCase(fetchTrending.fulfilled, (state, { payload }) => { state.trending = payload.destinations })
+      .addCase(fetchTrending.fulfilled, (state, { payload }) => {
+        const data = payload.data || payload
+        state.trending = data.destinations || []
+      })
+
       // Like/Save in discover feed
       .addCase(discoverLikeTrip.fulfilled, (state, { payload }) => {
+        const data = payload.data || payload
         const t = state.feed.find(t => t._id === payload.id)
-        if (t) { t.likesCount = payload.likesCount; t.isLiked = payload.isLiked }
+        if (t) {
+          t.likesCount = data.likesCount
+          t.isLiked = data.isLiked
+        }
       })
       .addCase(discoverSaveTrip.fulfilled, (state, { payload }) => {
+        const data = payload.data || payload
         const t = state.feed.find(t => t._id === payload.id)
-        if (t) { t.savesCount = payload.savesCount; t.isSaved = payload.isSaved }
+        if (t) {
+          t.savesCount = data.savesCount
+          t.isSaved = data.isSaved
+        }
       })
   },
 })

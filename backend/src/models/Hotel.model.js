@@ -24,4 +24,11 @@ hotelSchema.index({ location: '2dsphere' })
 hotelSchema.index({ city: 1, averageRating: -1 })
 hotelSchema.index({ name: 'text', city: 'text' })
 
+// Register hooks before compilation
+const { registerSyncHooks, INDICES, shapeHotel } = require('../services/es.sync')
+const { registerCacheInvalidationSchemaHooks } = require('../services/cacheInvalidator')
+
+registerSyncHooks(hotelSchema, INDICES.hotels, shapeHotel)
+registerCacheInvalidationSchemaHooks(hotelSchema, 'hotel')
+
 module.exports = mongoose.model('Hotel', hotelSchema)

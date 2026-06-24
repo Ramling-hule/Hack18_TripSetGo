@@ -230,4 +230,11 @@ restaurantSchema.virtual('isStale').get(function () {
   return Date.now() - this.lastFetchedAt.getTime() > 6 * 60 * 60 * 1000
 })
 
+// Register hooks before compilation
+const { registerSyncHooks, INDICES, shapeRestaurant } = require('../services/es.sync')
+const { registerCacheInvalidationSchemaHooks } = require('../services/cacheInvalidator')
+
+registerSyncHooks(restaurantSchema, INDICES.restaurants, shapeRestaurant)
+registerCacheInvalidationSchemaHooks(restaurantSchema, 'restaurant')
+
 module.exports = mongoose.model('Restaurant', restaurantSchema)

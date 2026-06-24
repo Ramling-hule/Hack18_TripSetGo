@@ -2,7 +2,7 @@
 
 const Notification = require('../models/Notification.model')
 const User         = require('../models/User.model')
-const emailService = require('./email.service')
+const queueService = require('./queue.service')
 const logger       = require('../utils/logger')
 
 // ── Internal Helpers ────────────────────────────────────────────────────────
@@ -112,13 +112,21 @@ exports.notifyTripShared = async ({ trip, actor, shareUrl, io, activeUsers }) =>
         })
 
         // Email channel
-        await emailService.sendTripSharedEmail(user.email, user.name, {
-          actorName:   actor.name,
-          destination: trip.destination,
-          shareUrl,
-          startDate:   trip.startDate,
-          endDate:     trip.endDate,
-        })
+        queueService.addJob('email', 'send', {
+          type: 'trip_shared',
+          email: user.email,
+          name: user.name,
+          opts: {
+            actorName:   actor.name,
+            destination: trip.destination,
+            shareUrl,
+            startDate:   trip.startDate,
+            endDate:     trip.endDate,
+          }
+        }, {
+          attempts: 5,
+          backoff: { type: 'exponential', delay: 10000 }
+        }).catch(err => logger.error(`[NotifService] Failed to queue trip shared email: ${err.message}`))
 
         logger.info(`[Notif] trip_shared → user ${user._id} (email + socket)`)
       })
@@ -196,15 +204,23 @@ exports.notifyNewReview = async ({ review, actor, placeName, io, activeUsers }) 
         })
 
         // Email channel
-        await emailService.sendNewReviewEmail(owner.email, owner.name, {
-          actorName:       actor.name,
-          placeName,
-          targetType:      review.targetType,
-          rating:          review.rating,
-          reviewTitle:     review.title,
-          tripDestination: relatedTrip.destination,
-          tripId:          relatedTrip._id,
-        })
+        queueService.addJob('email', 'send', {
+          type: 'new_review',
+          email: owner.email,
+          name: owner.name,
+          opts: {
+            actorName:       actor.name,
+            placeName,
+            targetType:      review.targetType,
+            rating:          review.rating,
+            reviewTitle:     review.title,
+            tripDestination: relatedTrip.destination,
+            tripId:          relatedTrip._id,
+          }
+        }, {
+          attempts: 5,
+          backoff: { type: 'exponential', delay: 10000 }
+        }).catch(err => logger.error(`[NotifService] Failed to queue new review email: ${err.message}`))
 
         logger.info(`[Notif] new_review → user ${owner._id} for place "${placeName}"`)
       })
@@ -275,12 +291,20 @@ exports.notifyItineraryUpdated = async ({ trip, actor, changeDesc, io, activeUse
         })
 
         // Email channel
-        await emailService.sendItineraryUpdatedEmail(user.email, user.name, {
-          actorName:   actor.name,
-          destination: trip.destination,
-          changeDesc,
-          tripId:      trip._id,
-        })
+        queueService.addJob('email', 'send', {
+          type: 'itinerary_updated',
+          email: user.email,
+          name: user.name,
+          opts: {
+            actorName:   actor.name,
+            destination: trip.destination,
+            changeDesc,
+            tripId:      trip._id,
+          }
+        }, {
+          attempts: 5,
+          backoff: { type: 'exponential', delay: 10000 }
+        }).catch(err => logger.error(`[NotifService] Failed to queue itinerary updated email: ${err.message}`))
 
         logger.info(`[Notif] itinerary_updated → user ${user._id} (trip ${trip._id})`)
       })

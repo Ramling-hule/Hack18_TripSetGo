@@ -47,6 +47,11 @@ const io = new Server(server, {
 
 // Keep track of connected users { userId: socketId }
 const activeUsers = new Map()
+
+// Expose socket.io globally for background workers
+global.__io = io
+global.__activeUsers = activeUsers
+
 // Keep track of users inside each trip room { tripId: Map(socketId -> { userId, name, avatar }) }
 const tripRooms = new Map()
 

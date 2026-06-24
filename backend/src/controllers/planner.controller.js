@@ -80,37 +80,31 @@ exports.generatePlan = asyncHandler(async (req, res) => {
     }
   }
 
-  // --- Build RAG Context ---
-  const contextPackage = await ragService.buildContextPackage(input)
-
-  // --- Call Gemini AI ---
-  let plan        = await generateDetailedPlan(input, contextPackage)
-  let usedFallback = false
-
-  if (!plan) {
-    logger.warn(`⚠️ Gemini failed — using deterministic fallback for ${input.destination}`)
-    plan = fallback.generateDetailedFallback(input)
-    usedFallback = true
+  // Queue detailed plan generation job
+  let jobId = null
+  try {
+    const queueService = require('../services/queue.service')
+    const job = await queueService.addJob('itinerary', 'generate', {
+      type: 'plan',
+      userId: req.user ? req.user._id.toString() : 'anonymous',
+      input
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 }
+    })
+    jobId = job ? job.id : null
+  } catch (err) {
+    logger.error(`[Planner Controller] Failed to queue detailed plan job: ${err.message}`)
   }
 
-  logger.info(`✅ Planner: Plan generated for "${input.destination}" (${usedFallback ? 'fallback' : 'Gemini'})`)
-
-  // --- Cache the generated plan ---
-  // Only cache Gemini-generated plans; fallback plans are cheap to regenerate.
-  if (!usedFallback) {
-    try {
-      await cacheService.set('itinerary', cacheRaw, { plan, usedFallback, destination: input.destination, days: input.days, budget: input.budget })
-      logger.info(`[Cache] SET  itinerary — ${input.destination} (TTL: ${cacheService.TTL.itinerary}s)`)
-    } catch (err) {
-      logger.warn(`[Cache] Failed to store itinerary: ${err.message}`)
+  res.status(202).json({
+    success: true,
+    message: 'AI itinerary generation has started in the background.',
+    data: {
+      cacheRaw,
+      jobId
     }
-  }
-
-  // --- Response headers for client-side observability ---
-  res.setHeader('X-Data-Source', usedFallback ? 'fallback' : 'live')
-  res.setHeader('X-Enriched',    usedFallback ? 'false' : 'true')
-
-  created(res, { plan, usedFallback, destination: input.destination, days: input.days, budget: input.budget }, 'Travel plan generated successfully')
+  })
 })
 
 /**

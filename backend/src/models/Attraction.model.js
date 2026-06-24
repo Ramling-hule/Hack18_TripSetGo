@@ -196,4 +196,11 @@ attractionSchema.virtual('isStale').get(function () {
   return Date.now() - this.lastFetchedAt.getTime() > 24 * 60 * 60 * 1000
 })
 
+// Register hooks before compilation
+const { registerSyncHooks, INDICES, shapeAttraction } = require('../services/es.sync')
+const { registerCacheInvalidationSchemaHooks } = require('../services/cacheInvalidator')
+
+registerSyncHooks(attractionSchema, INDICES.attractions, shapeAttraction)
+registerCacheInvalidationSchemaHooks(attractionSchema, 'attraction')
+
 module.exports = mongoose.model('Attraction', attractionSchema)
