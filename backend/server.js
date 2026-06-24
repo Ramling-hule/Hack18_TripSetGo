@@ -38,6 +38,10 @@ connectDB().then(async () => {
   // Register Mongoose ↔ ES sync hooks (must run after DB models are loaded)
   require('./src/services/es.sync')
 
+  // Register Mongoose ↔ Cache invalidation hooks
+  const { registerCacheInvalidationHooks } = require('./src/services/cacheInvalidator')
+  registerCacheInvalidationHooks()
+
   const { pingElasticsearch }   = require('./src/config/elasticsearch')
   const { createIndices }       = require('./src/services/elasticsearch.service')
 
@@ -61,24 +65,45 @@ connectDB().then(async () => {
     logger.info(`🚀 TripSetGo API ready  ·  http://localhost:${PORT}  ·  ${process.env.NODE_ENV || 'development'}`)
   })
 
-  // ── Recommendation Engine — Trending Cron (30 min) ─────────────────────
-  // Run an initial computation shortly after boot (allow Redis to connect first),
-  // then repeat every 30 minutes.
-  const { computeTrending } = require('./src/services/recommendation.service')
-  const TRENDING_INTERVAL_MS = 30 * 60 * 1000  // 30 minutes
+  // ── Background Worker & Job Scheduler ──────────────────────────────────
+  const { startWorkers } = require('./src/workers')
+  const queueService = require('./src/services/queue.service')
 
-  const runTrendingRefresh = () => {
-    computeTrending()
-      .then(() => logger.info('📈 Trending scores refreshed'))
-      .catch(err => logger.error(`[Rec] Trending cron failed: ${err.message}`))
-  }
+  // Start background workers if enabled
+  startWorkers()
 
-  // Delay first run by 10s to let Redis finish connecting
-  setTimeout(() => {
-    runTrendingRefresh()
-    setInterval(runTrendingRefresh, TRENDING_INTERVAL_MS)
-    logger.info(`📈 Trending cron scheduled — runs every ${TRENDING_INTERVAL_MS / 60000} min`)
-  }, 10_000)
+  // Delay registration slightly to let Redis connection stabilize
+  setTimeout(async () => {
+    try {
+      // 1. Trending recommendations (repeat every 30m, run once on boot after 10s)
+      if (queueService.recQueue) {
+        await queueService.addJob('recommendation', 'update-trending', {}, {
+          repeat: { every: 30 * 60 * 1000 }
+        })
+        // Trigger initial run
+        await queueService.addJob('recommendation', 'update-trending', {})
+        logger.info('📈 Trending scoring job scheduled')
+      }
+
+      // 2. Cache warming (repeat every 25m, run once on boot after 15s)
+      if (queueService.refreshQueue) {
+        await queueService.addJob('refresh', 'warm-all', {}, {
+          repeat: { every: 25 * 60 * 1000 }
+        })
+        // Stagger boot run
+        setTimeout(async () => {
+          try {
+            await queueService.addJob('refresh', 'warm-all', {})
+          } catch (err) {
+            logger.error(`[Scheduler] Cache warming boot run failed: ${err.message}`)
+          }
+        }, 5000)
+        logger.info('🔥 Cache warming job scheduled')
+      }
+    } catch (err) {
+      logger.error(`[Scheduler] Failed to setup background job schedules: ${err.message}`)
+    }
+  }, 10000)
   // ───────────────────────────────────────────────────────────────────────
 })
 

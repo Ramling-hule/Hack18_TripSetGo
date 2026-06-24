@@ -29,4 +29,8 @@ router.delete('/destinations/:type/:id', adminCtrl.deleteDestination)
 router.get('/reports', adminCtrl.getReports)
 router.get('/export/users', adminCtrl.exportUsersCSV)
 
+// Queues Dashboard
+const queueAdminRouter = require('./queueAdmin.routes')
+router.use('/queues', queueAdminRouter)
+
 module.exports = router

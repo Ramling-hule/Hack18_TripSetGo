@@ -20,4 +20,11 @@ reviewSchema.index({ targetType: 1, targetId: 1, createdAt: -1 })
 // Ensure a user can only review an item once
 reviewSchema.index({ userId: 1, targetType: 1, targetId: 1 }, { unique: true })
 
+// Register hooks before compilation
+const { registerSyncHooks, INDICES, shapeReview } = require('../services/es.sync')
+const { registerCacheInvalidationSchemaHooks } = require('../services/cacheInvalidator')
+
+registerSyncHooks(reviewSchema, INDICES.reviews, shapeReview)
+registerCacheInvalidationSchemaHooks(reviewSchema, 'review')
+
 module.exports = mongoose.model('Review', reviewSchema)

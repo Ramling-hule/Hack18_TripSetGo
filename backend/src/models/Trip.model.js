@@ -79,4 +79,8 @@ tripSchema.index({ destination: 'text', tags: 'text' })
 tripSchema.index({ isPublic: 1, createdAt: -1 })
 tripSchema.index({ userId: 1, createdAt: -1 })
 
+// Register cache invalidation hooks before compilation
+const { registerCacheInvalidationSchemaHooks } = require('../services/cacheInvalidator')
+registerCacheInvalidationSchemaHooks(tripSchema, 'trip')
+
 module.exports = mongoose.model('Trip', tripSchema)

@@ -1,18 +1,12 @@
 // server/src/services/es.sync.js
 // ─────────────────────────────────────────────────────────────────────────────
-// Mongoose post-hook sync: keeps Elasticsearch in sync with MongoDB writes.
-//
-// Register this module once with require('./services/es.sync') in server.js.
-// It patches the Mongoose models in-place, so the hooks are active for every
-// subsequent save / remove / findOneAndDelete regardless of which controller
-// calls them.
+// Mongoose post-hook sync: keeps Elasticsearch in sync via background BullMQ jobs.
 // ─────────────────────────────────────────────────────────────────────────────
 const logger = require('../utils/logger')
+const queueService = require('./queue.service')
 
 const {
   INDICES,
-  indexDocument,
-  deleteDocument,
   shapeHotel,
   shapeRestaurant,
   shapeAttraction,
@@ -22,63 +16,60 @@ const {
 // ── Generic hook factory ─────────────────────────────────────────────────────
 
 /**
- * Register post-save and post-remove hooks on a Mongoose schema.
+ * Register post-save and post-remove hooks on a Mongoose schema to queue ES jobs.
  *
  * @param {mongoose.Schema} schema  - The schema to patch
  * @param {string}          index   - Target ES index name (from INDICES)
  * @param {Function}        shaper  - (mongoDoc) => esBody
  */
 const registerSyncHooks = (schema, index, shaper) => {
+  const addSyncJob = async (action, id, doc) => {
+    try {
+      await queueService.addJob('es-sync', 'sync-doc', {
+        action,
+        index,
+        id,
+        doc
+      }, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 }
+      });
+    } catch (err) {
+      logger.error(`[ES Sync] Failed to queue sync job for ${index}/${id}: ${err.message}`);
+    }
+  };
+
   // ── post save (create + update) ────────────────────────────────────────
   schema.post('save', async function (doc) {
-    try {
-      await indexDocument(index, doc._id.toString(), shaper(doc.toObject ? doc.toObject() : doc))
-    } catch (err) {
-      logger.error(`[ES Sync] post-save failed (${index}/${doc._id}): ${err.message}`)
-    }
+    const shaped = shaper(doc.toObject ? doc.toObject() : doc);
+    await addSyncJob('index', doc._id.toString(), shaped);
   })
 
   // ── post findOneAndUpdate ──────────────────────────────────────────────
   schema.post('findOneAndUpdate', async function (doc) {
     if (!doc) return
-    try {
-      await indexDocument(index, doc._id.toString(), shaper(doc.toObject ? doc.toObject() : doc))
-    } catch (err) {
-      logger.error(`[ES Sync] post-findOneAndUpdate failed (${index}/${doc._id}): ${err.message}`)
-    }
+    const shaped = shaper(doc.toObject ? doc.toObject() : doc);
+    await addSyncJob('index', doc._id.toString(), shaped);
   })
 
   // ── post remove (Mongoose 6+ doc.deleteOne()) ──────────────────────────
   schema.post('deleteOne', { document: true, query: false }, async function (doc) {
-    try {
-      await deleteDocument(index, doc._id.toString())
-    } catch (err) {
-      logger.error(`[ES Sync] post-deleteOne failed (${index}/${doc._id}): ${err.message}`)
-    }
+    await addSyncJob('delete', doc._id.toString(), null);
   })
 
   // ── post findOneAndDelete ──────────────────────────────────────────────
   schema.post('findOneAndDelete', async function (doc) {
     if (!doc) return
-    try {
-      await deleteDocument(index, doc._id.toString())
-    } catch (err) {
-      logger.error(`[ES Sync] post-findOneAndDelete failed (${index}/${doc._id}): ${err.message}`)
-    }
+    await addSyncJob('delete', doc._id.toString(), null);
   })
 }
 
-// ── Patch models ─────────────────────────────────────────────────────────────
-// Require models after defining helpers to avoid circular deps.
+module.exports = {
+  registerSyncHooks,
+  INDICES,
+  shapeHotel,
+  shapeRestaurant,
+  shapeAttraction,
+  shapeReview
+};
 
-const Hotel      = require('../models/Hotel.model')
-const Restaurant = require('../models/Restaurant.model')
-const Attraction = require('../models/Attraction.model')
-const Review     = require('../models/Review.model')
-
-registerSyncHooks(Hotel.schema,      INDICES.hotels,      shapeHotel)
-registerSyncHooks(Restaurant.schema, INDICES.restaurants, shapeRestaurant)
-registerSyncHooks(Attraction.schema, INDICES.attractions, shapeAttraction)
-registerSyncHooks(Review.schema,     INDICES.reviews,     shapeReview)
-
-logger.info('🔁 Search sync hooks registered')

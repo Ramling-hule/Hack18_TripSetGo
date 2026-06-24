@@ -13,9 +13,12 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@bull-board/api": "^8.0.1",
+    "@bull-board/express": "^8.0.1",
     "@elastic/elasticsearch": "^9.4.2",
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.3",
+    "bullmq": "^5.79.1",
     "cloudinary": "^2.10.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",

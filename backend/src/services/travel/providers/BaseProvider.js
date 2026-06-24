@@ -186,7 +186,7 @@ class BaseProvider {
    * @returns {Promise<*>}
    */
   async fetchWithCache(namespace, raw, fetchFn) {
-    const cached = await cacheService.getByNs(namespace, raw)
+    const cached = await cacheService.getByNs(namespace, raw, fetchFn)
     if (cached !== null) {
       travelLogger.cache(this.name, 'HIT', namespace, { raw: raw.slice(0, 40) })
       return cached

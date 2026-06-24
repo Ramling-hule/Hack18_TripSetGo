@@ -31,19 +31,8 @@ exports.createTrip = asyncHandler(async (req, res) => {
 
   const tripData = { source, destination, startDate, endDate, budget: Number(budget), numTravelers: Number(numTravelers) || 1, groupType: groupType || 'solo', pace: pace || 'balanced', preferences: preferences || [] }
 
-  // Try Gemini first, fallback to deterministic engine
-  let planData = await generateTripPlan(tripData)
-  let usedFallback = false
-
-  if (!planData) {
-    logger.warn(`⚠️ Gemini failed — using deterministic fallback for ${destination}`)
-    planData = fallback.generatePlan(tripData)
-    usedFallback = true
-  }
-
   const tags = [
     destination.toLowerCase(),
-    ...(planData.meta?.tags || []),
     ...(preferences || []).slice(0, 3),
   ].filter(Boolean)
 
@@ -52,10 +41,10 @@ exports.createTrip = asyncHandler(async (req, res) => {
     const trip = await Trip.create([{
       userId: req.user._id,
       ...tripData,
-      planData,
+      planData: null,
       tags,
       isPublic: false,
-      usedFallback,
+      usedFallback: false,
     }], { session })
 
     // Update subscription usage counter
@@ -76,22 +65,34 @@ exports.createTrip = asyncHandler(async (req, res) => {
     return { trip: trip[0], user }
   })
 
-  logger.info(`✅ Trip created: ${destination} (${usedFallback ? 'fallback' : 'Gemini'}) for user ${req.user._id}`)
+  // Queue background AI generation job
+  let jobId = null
+  try {
+    const queueService = require('../services/queue.service')
+    const job = await queueService.addJob('itinerary', 'generate', {
+      type: 'trip',
+      tripId: trip._id.toString(),
+      tripData,
+      userId: req.user._id.toString()
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 }
+    })
+    jobId = job ? job.id : null
+  } catch (err) {
+    logger.error(`[Trip Controller] Failed to queue itinerary generation job: ${err.message}`)
+  }
 
-  // Invalidate feed + trending caches — a new trip affects public discovery
-  cacheService.flushMany('destinations:feed', 'destinations:trending').catch((err) =>
-    logger.warn(`[Cache] Feed/trending invalidation failed: ${err.message}`)
-  )
+  logger.info(`✅ Trip plan generation queued: ${destination} for user ${req.user._id}`)
 
-  // Log trip_create activity for recommendation engine (fire-and-forget)
-  logActivity(req.user._id, 'trip_create', null, null, {
-    destination,
-    source,
-    groupType: groupType || 'solo',
-    budget:    Number(budget),
+  res.status(202).json({
+    success: true,
+    message: 'Trip plan generation has started in the background.',
+    data: {
+      tripId: trip._id,
+      jobId
+    }
   })
-
-  created(res, { plan: planData, tripId: trip._id, usedFallback }, 'Trip plan generated')
 })
 
 // ── GET /api/v1/trips/my-trips ───────────────────────────────────────────
