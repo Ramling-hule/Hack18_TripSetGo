@@ -45,6 +45,17 @@ router.get(
   attractionsCtrl.searchByCity
 )
 
+// ── Search by Category (15 min cache) ─────────────────────────────────────────
+//
+// GET /api/v1/attractions/category?city=Jaipur&category=museums
+router.get(
+  '/category',
+  optionalAuth,
+  validate({ query: cityQuerySchema }),
+  cache('attractions:city', 900),
+  attractionsCtrl.searchByCategory
+)
+
 // ── Search nearby (10 min cache) ──────────────────────────────────────────────
 //
 // GET /api/v1/attractions/nearby?lat=26.9&lon=75.8&radius=5000&limit=20

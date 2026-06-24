@@ -1,7 +1,7 @@
 // server/src/controllers/planner.controller.js
 const { generateDetailedPlan, regenerateItineraryDay } = require('../services/gemini.service')
 const fallback                   = require('../planning/fallbackPlanner')
-const travelApiService           = require('../services/travel/travelApi.service')
+const ragService                 = require('../services/rag.service')
 const Subscription               = require('../models/Subscription.model')
 const cacheService               = require('../services/cache.service')
 const { success, created, badRequest } = require('../utils/response')
@@ -24,7 +24,7 @@ const logger                     = require('../utils/logger')
  *   - POST body is used as the cache discriminator since this is not a GET route
  */
 exports.generatePlan = asyncHandler(async (req, res) => {
-  const { destination, budget, days, interests } = req.body
+  const { source, destination, budget, days, interests } = req.body
 
   // --- Input Validation ---
   if (!destination || typeof destination !== 'string' || destination.trim().length < 2) {
@@ -38,6 +38,7 @@ exports.generatePlan = asyncHandler(async (req, res) => {
   }
 
   const input = {
+    source:      source ? source.trim() : null,
     destination: destination.trim(),
     budget:      Number(budget),
     days:        Number(days),
@@ -79,8 +80,11 @@ exports.generatePlan = asyncHandler(async (req, res) => {
     }
   }
 
+  // --- Build RAG Context ---
+  const contextPackage = await ragService.buildContextPackage(input)
+
   // --- Call Gemini AI ---
-  let plan        = await generateDetailedPlan(input)
+  let plan        = await generateDetailedPlan(input, contextPackage)
   let usedFallback = false
 
   if (!plan) {
@@ -90,10 +94,6 @@ exports.generatePlan = asyncHandler(async (req, res) => {
   }
 
   logger.info(`✅ Planner: Plan generated for "${input.destination}" (${usedFallback ? 'fallback' : 'Gemini'})`)
-
-  // --- Enrich plan with live travel API data (attractions, hotels, weather) ---
-  // Non-breaking: if travelApiService fails entirely, `plan` is returned unchanged.
-  plan = await travelApiService.enrichPlan(plan, input)
 
   // --- Cache the generated plan ---
   // Only cache Gemini-generated plans; fallback plans are cheap to regenerate.
@@ -107,8 +107,8 @@ exports.generatePlan = asyncHandler(async (req, res) => {
   }
 
   // --- Response headers for client-side observability ---
-  res.setHeader('X-Data-Source', plan._liveData ? 'live' : 'fallback')
-  res.setHeader('X-Enriched',    plan._liveData ? 'true' : 'false')
+  res.setHeader('X-Data-Source', usedFallback ? 'fallback' : 'live')
+  res.setHeader('X-Enriched',    usedFallback ? 'false' : 'true')
 
   created(res, { plan, usedFallback, destination: input.destination, days: input.days, budget: input.budget }, 'Travel plan generated successfully')
 })

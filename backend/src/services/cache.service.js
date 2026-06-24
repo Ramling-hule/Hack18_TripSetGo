@@ -37,10 +37,17 @@ const TTL = {
   // Weather (OWM free tier: 60 req/min; data changes every 10–60 min)
   'weather:current':       600,   // 10 min  ← current conditions (changes quickly)
   'weather:forecast':      3600,  // 60 min  ← 5-day forecast (stable for 1h)
-  // Flights (Amadeus — static airport/airline data; volatile pricing)
+  // Flights (AviationStack — static airport/airline data; schedule data; live status)
   'flights:airports':      86400, // 24 h    ← airport autocomplete (static IATA data)
-  'flights:search':        600,   // 10 min  ← flight offers (prices shift frequently)
+  'flights:airports:city': 604800,// 7 days  ← city→airports mapping (very stable)
+  'flights:search':        1800,  // 30 min  ← flight schedules (semi-stable)
   'flights:airlines':      86400, // 24 h    ← airline name/details (static data)
+  'flights:status':        120,   // 2 min   ← live flight status (changes rapidly)
+
+  // Hotels (Foursquare Places)
+  'hotels:city':           1800,  // 30 min  ← FSQ hotel search by city
+  'hotels:nearby':         900,   // 15 min  ← FSQ nearby hotels
+  'hotels:detail':         7200,  // 2 hours ← FSQ full hotel detail
 
   // Search
   'search:city':           900,   // 15 min

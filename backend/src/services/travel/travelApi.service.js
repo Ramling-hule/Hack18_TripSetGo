@@ -39,7 +39,9 @@ const { enrich }    = require('./planEnricher')
 // Patch travel TTL namespaces into cache.service on first import
 patchTravelTTLs()
 
-// ── Nominatim Geocoder ────────────────────────────────────────────────────
+const mapboxProvider = require('./providers/mapbox.provider')
+
+// ── Mapbox Geocoder ───────────────────────────────────────────────────────
 // Used to convert destination name → lat/lon for proximity-based API calls.
 
 /**
@@ -58,116 +60,27 @@ async function geocodeDestination(destination) {
     return cached
   }
 
-  travelLogger.info('Nominatim', `Geocoding "${destination}"`)
+  travelLogger.info('Mapbox', `Geocoding "${destination}"`)
 
   try {
-    const result = await _nominatimSearch(destination)
+    const result = await mapboxProvider.geocode(destination)
     if (result) {
-      await cacheService.set('travel:geocode', cacheRaw, result)
-      travelLogger.info('Nominatim', `✅ Geocoded "${destination}" → (${result.lat}, ${result.lon})`)
+      await cacheService.set('travel:geocode', cacheRaw, result.coordinates)
+      travelLogger.info('Mapbox', `✅ Geocoded "${destination}" → (${result.coordinates.lat}, ${result.coordinates.lon})`)
+      return { lat: result.coordinates.lat, lon: result.coordinates.lon, name: result.name, country: result.country }
     }
-    return result
+    return null
   } catch (err) {
-    travelLogger.warn('Nominatim', `Geocoding failed for "${destination}": ${err.message}`)
+    travelLogger.warn('Mapbox', `Geocoding failed for "${destination}": ${err.message}`)
     return null
   }
 }
 
-function _nominatimSearch(query) {
-  return new Promise((resolve, reject) => {
-    const url = new URL('https://nominatim.openstreetmap.org/search')
-    url.searchParams.set('q', `${query}, India`)
-    url.searchParams.set('format', 'json')
-    url.searchParams.set('limit', '1')
-    url.searchParams.set('addressdetails', '0')
+// Removed _nominatimSearch
 
-    const options = {
-      hostname: url.hostname,
-      path: `${url.pathname}${url.search}`,
-      method: 'GET',
-      headers: {
-        'User-Agent': 'TripSetGo/1.0 (travel-planning-app)',
-        'Accept': 'application/json',
-        'Accept-Language': 'en',
-      },
-      timeout: 4000,
-    }
 
-    const req = https.request(options, res => {
-      let body = ''
-      res.on('data', c => { body += c })
-      res.on('end', () => {
-        try {
-          const results = JSON.parse(body)
-          if (!results?.length) return resolve(null)
-          const r = results[0]
-          resolve({
-            lat:         parseFloat(r.lat),
-            lon:         parseFloat(r.lon),
-            name:        r.display_name?.split(',')[0] || query,
-            country:     'India',
-            displayName: r.display_name,
-          })
-        } catch (e) {
-          reject(new Error(`Nominatim parse error: ${e.message}`))
-        }
-      })
-    })
-
-    req.on('timeout', () => { req.destroy(); reject(new Error('Nominatim timeout')) })
-    req.on('error', err => reject(err))
-    req.end()
-  })
-}
-
-// ── IATA City Code Resolution ─────────────────────────────────────────────
-// Amadeus requires IATA city codes (e.g. GOI for Goa, DEL for Delhi).
-// This minimal lookup covers top Indian destinations.
-
-const IATA_MAP = {
-  goa:       'GOI', panaji: 'GOI', vasco: 'GOI',
-  mumbai:    'BOM', bombay: 'BOM',
-  delhi:     'DEL', 'new delhi': 'DEL',
-  bangalore: 'BLR', bengaluru: 'BLR',
-  hyderabad: 'HYD',
-  chennai:   'MAA', madras: 'MAA',
-  kolkata:   'CCU', calcutta: 'CCU',
-  jaipur:    'JAI',
-  ahmedabad: 'AMD',
-  pune:      'PNQ',
-  kochi:     'COK', cochin: 'COK',
-  kerala:    'COK',
-  manali:    'KUU', kullu: 'KUU',
-  shimla:    'SLV',
-  agra:      'AGR',
-  varanasi:  'VNS',
-  udaipur:   'UDR',
-  amritsar:  'ATQ',
-  leh:       'IXL', ladakh: 'IXL',
-  srinagar:  'SXR',
-  dehradun:  'DED',
-  bhubaneswar: 'BBI',
-  mysore:    'MYQ', mysuru: 'MYQ',
-  coimbatore:'CJB',
-  vizag:     'VTZ', visakhapatnam: 'VTZ',
-  guwahati:  'GAU',
-  patna:     'PAT',
-  ranchi:    'IXR',
-  raipur:    'RPR',
-  bhopal:    'BHO',
-  indore:    'IDR',
-  nagpur:    'NAG',
-  surat:     'STV',
-  chandigarh:'IXC',
-  jammu:     'IXJ',
-  pondicherry: 'PNY', puducherry: 'PNY',
-  ooty:      'CJB', // nearest airport
-}
-
-function resolveIataCode(destination) {
-  const key = destination.toLowerCase().trim()
-  return IATA_MAP[key] || null
-}
+// ── Removed IATA City Code Resolution ─────────────────────────────────────
+// Amadeus required IATA codes. Foursquare uses coordinates, so this is no longer needed.
 
 // ── Date Utilities ────────────────────────────────────────────────────────
 
@@ -211,7 +124,7 @@ async function enrichPlan(plan, input) {
   const { lat, lon } = geo
 
   // ── 2. Parallel data fetch ────────────────────────────────────────────
-  const iataCode = resolveIataCode(destination)
+  // checkIn / checkOut kept for fallback/legacy logic if needed by aggregators
   const checkIn  = startDate
   const checkOut = buildCheckoutDate(startDate, days)
 
@@ -227,13 +140,10 @@ async function enrichPlan(plan, input) {
     })(),
 
     (async () => {
-      if (!iataCode) {
-        travelLogger.warn('travelApi', `No IATA code for "${destination}" — skipping Amadeus`)
-        return []
-      }
-      providersAttempted.push('Amadeus')
-      const r = await registry.fetchHotels({ cityCode: iataCode, checkIn, checkOut, adults: 2, budget, nights: days })
-      if (r.length) providersSucceeded.push('Amadeus')
+      providersAttempted.push('Foursquare[Hotels]')
+      // Foursquare uses lat/lon + radius
+      const r = await registry.fetchHotels({ lat, lon, city: destination, radiusM: 10000, limit: 15 })
+      if (r.length) providersSucceeded.push('Foursquare[Hotels]')
       return r
     })(),
 
@@ -282,7 +192,6 @@ async function enrichPlan(plan, input) {
     destination,
     lat,
     lon,
-    iataCode:             iataCode || 'N/A',
     providersAttempted,
     providersSucceeded,
     cacheHits,

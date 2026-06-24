@@ -25,18 +25,16 @@
 const cfg = {
   overpass: {
     name: 'Overpass',
-    // Primary Overpass endpoint (OSM public instance)
-    // Mirror is handled inside overpass.provider.js automatically
     baseUrl: 'https://overpass-api.de',
-    timeout: parseInt(process.env.TRAVEL_API_TIMEOUT_MS, 10) || 25000, // Overpass may be slow
-    maxRetries: 2,  // Fewer retries — Overpass queries are expensive
+    timeout: parseInt(process.env.TRAVEL_API_TIMEOUT_MS, 10) || 25000,
+    maxRetries: 2,
     rateLimit: {
       strategy: 'token-bucket',
-      maxRequests: 2,   // Max 2 req/s (OSM fair-use policy)
+      maxRequests: 2,
       windowMs: 1000,
     },
-    keys: [], // No API key required for Overpass
-    enabled: true, // Always enabled
+    keys: [],
+    enabled: true,
   },
 
   foursquare: {
@@ -73,24 +71,28 @@ const cfg = {
     enabled: !!process.env.OPENWEATHER_API_KEY_1,
   },
 
-  amadeus: {
-    name: 'Amadeus',
-    // Test environment — switch to 'https://api.amadeus.com' for production
-    baseUrl: 'https://test.api.amadeus.com',
-    tokenUrl: 'https://test.api.amadeus.com/v1/security/oauth2/token',
+  // ── AviationStack ────────────────────────────────────────────────────────────
+  // Flights, airports, airlines, flight status.
+  // Free tier: 500 req/month (HTTP only) — https://aviationstack.com
+  // Paid tiers unlock HTTPS and real-time data.
+  // Register at: https://aviationstack.com/signup/free
+  aviationStack: {
+    name: 'AviationStack',
+    baseUrl: 'http://api.aviationstack.com/v1', // HTTP on free tier
     timeout: parseInt(process.env.TRAVEL_API_TIMEOUT_MS, 10) || 8000,
-    maxRetries: parseInt(process.env.TRAVEL_API_MAX_RETRIES, 10) || 4,
+    maxRetries: parseInt(process.env.TRAVEL_API_MAX_RETRIES, 10) || 3,
     rateLimit: {
-      strategy: 'token-bucket',
-      maxRequests: 10,   // 10 req/s on test tier
-      windowMs: 1000,
+      // Monthly quota — 500/month free. Use daily-counter (≈16/day safe budget).
+      // We set it generously; aggressive Redis caching is the real guard.
+      strategy: 'daily-counter',
+      maxRequests: 30,    // ~30/day = ~900/month — leaves buffer for spikes
+      windowMs: 86400000, // 24 hours
     },
-    // Amadeus uses OAuth2 client credentials — not a simple API key
-    clientId:     process.env.AMADEUS_CLIENT_ID,
-    clientSecret: process.env.AMADEUS_CLIENT_SECRET,
-    // keys array is unused for Amadeus (OAuth2 flow), kept empty for BaseProvider compat
-    keys: [],
-    enabled: !!(process.env.AMADEUS_CLIENT_ID && process.env.AMADEUS_CLIENT_SECRET),
+    keys: [
+      process.env.AVIATIONSTACK_API_KEY_1,
+      process.env.AVIATIONSTACK_API_KEY_2,
+    ].filter(Boolean),
+    enabled: !!process.env.AVIATIONSTACK_API_KEY_1,
   },
 
   nominatim: {
@@ -99,20 +101,18 @@ const cfg = {
     timeout: 4000,
     maxRetries: 2,
     rateLimit: {
-      // Nominatim usage policy: max 1 req/s
       strategy: 'token-bucket',
       maxRequests: 1,
       windowMs: 1000,
     },
-    keys: [], // no key required
+    keys: [],
     enabled: true,
   },
 
-  // ── OpenTripMap ─────────────────────────────────────────────────────────
+  // ── OpenTripMap ──────────────────────────────────────────────────────────────
   // Attractions discovery provider: city search, nearby search, detail fetch.
   // Free tier: ~5 req/s, 5000 req/day
   // Docs: https://opentripmap.io/docs
-  // Get a free key at: https://opentripmap.io/product
   openTripMap: {
     name: 'OpenTripMap',
     baseUrl: 'https://api.opentripmap.com/0.1/en/places',
@@ -120,12 +120,12 @@ const cfg = {
     maxRetries: parseInt(process.env.TRAVEL_API_MAX_RETRIES, 10) || 3,
     rateLimit: {
       strategy: 'token-bucket',
-      maxRequests: 5,    // Stay under free-tier 5 req/s
+      maxRequests: 5,
       windowMs: 1000,
     },
     keys: [
       process.env.OPENTRIPMAP_API_KEY,
-      process.env.OPENTRIPMAP_API_KEY_2, // optional second key for rotation
+      process.env.OPENTRIPMAP_API_KEY_2,
     ].filter(Boolean),
     enabled: !!process.env.OPENTRIPMAP_API_KEY,
   },

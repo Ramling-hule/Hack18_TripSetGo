@@ -29,6 +29,15 @@ const errorHandler = (err, req, res, next) => {
     return res.status(401).json({ success: false, message: 'Token expired' })
   }
 
+  // Travel API Provider errors (Circuit Breaker / Rate Limit)
+  if (err.message && err.message.includes('Circuit breaker is OPEN')) {
+    return res.status(503).json({ success: false, message: 'External provider is temporarily unavailable' })
+  }
+  if (err.message && err.message.includes('Rate limit exceeded')) {
+    res.set('Retry-After', '60')
+    return res.status(429).json({ success: false, message: 'External provider rate limit exceeded' })
+  }
+
   // Generic
   const statusCode = err.statusCode || err.status || 500
   res.status(statusCode).json({

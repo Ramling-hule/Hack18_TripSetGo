@@ -111,7 +111,7 @@ Rules:
  * Output: Full plan with itinerary, attractions, restaurants, cost breakdown, packing list.
  * Falls back to null on failure — caller should use fallbackPlanner.
  */
-async function generateDetailedPlan({ destination, budget, days, interests = [] }) {
+async function generateDetailedPlan({ destination, budget, days, interests = [] }, contextPackage = null) {
   const model = genAI.getGenerativeModel({ model: MODEL })
 
   const interestStr = interests.length > 0 ? interests.join(', ') : 'general sightseeing'
@@ -124,6 +124,17 @@ Trip Details:
 - Total Budget: ₹${budget} INR
 - Duration: ${days} days
 - Traveler Interests: ${interestStr}
+
+${contextPackage ? `
+AVAILABLE_CONTEXT (Use ONLY this data for hotels, restaurants, attractions, flights, and weather):
+${JSON.stringify(contextPackage, null, 2)}
+
+CRITICAL RULES FOR RAG:
+1. You MUST ONLY recommend hotels, restaurants, and attractions that exist in the AVAILABLE_CONTEXT.
+2. Do not hallucinate or invent places.
+3. Use the exact names and prices from the context.
+4. If flights are provided, mention them in the local_tips or itinerary.
+` : ''}
 
 Return ONLY a valid JSON object (no markdown, no code fences, no explanation) with EXACTLY this schema:
 

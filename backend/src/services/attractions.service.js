@@ -137,6 +137,34 @@ function persistAsync(attractions, city) {
   })
 }
 
+// ── searchByCategory ──────────────────────────────────────────────────────────
+
+/**
+ * Convenience wrapper for category-based attraction search using Foursquare.
+ */
+async function searchByCategory(city, categoryIds, opts = {}) {
+  const { limit = 20, radius = 12000 } = opts
+  const cacheRaw = `city:${city.trim().toLowerCase()}|r=${radius}|l=${limit}|cat=${categoryIds}`
+
+  const cached = await cacheService.getByNs('attractions:city', cacheRaw)
+  if (cached) return { ...cached, cached: true }
+
+  logger.info(`[AttractionsService] CACHE MISS category="${categoryIds}" city="${city}"`)
+
+  // Reuse geocodeCity logic from hotels or travelApi, or just rely on OTM for geocoding
+  // Since we already have OTM for city→lat/lon, let's use it
+  const { geo } = await otmProvider.fetchAttractionsByCity({ city, radiusM: 1000, limit: 1 })
+  if (!geo) return { attractions: [], geo: null, total: 0, cached: false }
+
+  const fsqAttrProvider = require('./travel/providers/foursquare.attraction.provider')
+  const attractions = await fsqAttrProvider._search({ lat: geo.lat, lon: geo.lon, radiusM: radius, limit, categoryIds })
+
+  const result = { attractions, geo, total: attractions.length, cached: false }
+  cacheService.set('attractions:city', cacheRaw, result, TTL.city).catch(() => {})
+  persistAsync(attractions, city)
+  return result
+}
+
 // ── searchByCity ─────────────────────────────────────────────────────────────
 
 /**
@@ -382,6 +410,7 @@ function isProviderEnabled() {
 module.exports = {
   searchByCity,
   searchNearby,
+  searchByCategory,
   getAttractionDetail,
   invalidateCity,
   getProviderHealth,
