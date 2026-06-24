@@ -13,8 +13,7 @@
 const logger = require('../utils/logger')
 
 const ELASTICSEARCH_URL      = process.env.ELASTICSEARCH_URL      || 'http://localhost:9200'
-const ELASTICSEARCH_USERNAME = process.env.ELASTICSEARCH_USERNAME || ''
-const ELASTICSEARCH_PASSWORD = process.env.ELASTICSEARCH_PASSWORD || ''
+const ELASTICSEARCH_API_KEY  = process.env.ELASTICSEARCH_API_KEY  || ''
 
 let Client = null
 try {
@@ -29,11 +28,10 @@ let esClient
 if (Client) {
   const clientOptions = { node: ELASTICSEARCH_URL }
 
-  // Only add auth when credentials are provided (avoids sending empty Basic header)
-  if (ELASTICSEARCH_USERNAME && ELASTICSEARCH_PASSWORD) {
+  // Only add auth when credentials are provided (avoids sending empty Basic/Auth headers)
+  if (ELASTICSEARCH_API_KEY) {
     clientOptions.auth = {
-      username: ELASTICSEARCH_USERNAME,
-      password: ELASTICSEARCH_PASSWORD,
+      apiKey: ELASTICSEARCH_API_KEY,
     }
   }
 

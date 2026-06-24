@@ -53,8 +53,6 @@ const MAPPINGS = {
       },
     },
     settings: {
-      number_of_shards:   1,
-      number_of_replicas: 0,
       analysis: {
         analyzer: {
           english: {
@@ -96,7 +94,6 @@ const MAPPINGS = {
         updatedAt: { type: 'date' },
       },
     },
-    settings: { number_of_shards: 1, number_of_replicas: 0 },
   },
 
   // ── Attractions ──────────────────────────────────────────────────────────
@@ -125,7 +122,6 @@ const MAPPINGS = {
         updatedAt: { type: 'date' },
       },
     },
-    settings: { number_of_shards: 1, number_of_replicas: 0 },
   },
 
   // ── Reviews ─────────────────────────────────────────────────────────────
@@ -145,7 +141,6 @@ const MAPPINGS = {
         updatedAt:       { type: 'date' },
       },
     },
-    settings: { number_of_shards: 1, number_of_replicas: 0 },
   },
 }
 
