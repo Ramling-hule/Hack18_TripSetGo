@@ -20,6 +20,8 @@
 //   4 → Fine Dining(₹₹₹₹ / above ₹1500)
 // ─────────────────────────────────────────────────────────────────────────────
 
+const { validateList } = require('../dto/schemas')
+
 // ── FSQ Food Category IDs → Cuisine mapping ──────────────────────────────────
 // Reference: https://docs.foursquare.com/data-products/docs/categories
 // Category 13000 = Dining & Drinking (parent), sub-categories map to cuisine
@@ -290,7 +292,7 @@ function normaliseMany(places = []) {
     if (normalised) result.push(normalised)
   }
 
-  return result
+  return validateList('Restaurant', result)
 }
 
 module.exports = {

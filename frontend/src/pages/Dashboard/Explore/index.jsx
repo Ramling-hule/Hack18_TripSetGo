@@ -87,13 +87,12 @@ function FlightsTab() {
       // In a real app, we'd use travelApi.searchAirports first to get the IATA code.
       // For simplicity, we just pass the input directly.
       const res = await travelApi.searchFlights({
-        origin: form.origin.toUpperCase(),
-        destination: form.destination.toUpperCase(),
-        departureDate: form.date,
-        adults: form.adults,
-        travelClass: form.travelClass
+        depIata: form.origin.toUpperCase(),
+        arrIata: form.destination.toUpperCase(),
+        flightDate: form.date,
+        limit: 10
       });
-      setResults(res.data.data.offers);
+      setResults(res.data.data.flights);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to search flights');
     } finally {
@@ -138,23 +137,23 @@ function FlightsTab() {
       
       {results && results.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {results.map((offer, idx) => (
+          {results.map((flight, idx) => (
             <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--color-border)', borderRadius: 16, padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(14, 165, 233, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0EA5E9', fontWeight: 800 }}>
-                  {offer.validatingAirline?.code || '✈️'}
+                  ✈️
                 </div>
                 <div>
-                  <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.2rem' }}>{offer.validatingAirline?.name || 'Unknown Airline'}</h4>
+                  <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.2rem' }}>{flight.airlineName} <span style={{fontSize:'0.8rem', color:'var(--color-text-muted)'}}>({flight.flightIata})</span></h4>
                   <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', display: 'flex', gap: '1rem' }}>
-                    <span>{offer.outbound?.departure?.airport} → {offer.outbound?.arrival?.airport}</span>
-                    <span>⏱ {offer.durationLabel}</span>
+                    <span>{flight.depAirport} → {flight.arrAirport}</span>
+                    <span>⏱ {flight.depTime ? new Date(flight.depTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Scheduled'}</span>
                   </p>
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0EA5E9' }}>₹{offer.totalINR?.toLocaleString() || offer.price?.total}</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{offer.seatsLeftLabel}</p>
+                <p style={{ fontSize: '1.2rem', fontWeight: 800, color: flight.status === 'active' ? '#10B981' : '#0EA5E9', textTransform: 'capitalize' }}>{flight.status || 'Scheduled'}</p>
+                {flight.arrTime && <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Arrives {new Date(flight.arrTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>}
               </div>
             </div>
           ))}
@@ -250,7 +249,7 @@ function PlacesTab({ type }) {
       const res = isAttr 
         ? await travelApi.searchAttractionsByCity(city) 
         : await travelApi.searchRestaurantsByCity(city);
-      setPlaces(res.data.data.results);
+      setPlaces(isAttr ? res.data.data.attractions : res.data.data.restaurants);
     } catch (err) {
       setError(err.response?.data?.message || `Failed to fetch ${type}`);
     } finally {

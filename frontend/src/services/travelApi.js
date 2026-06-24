@@ -2,12 +2,14 @@ import api from './api';
 
 export const travelApi = {
   // Flights
-  searchAirports: (keyword, subType = 'AIRPORT,CITY') => 
-    api.get(`/api/v1/flights/airports`, { params: { keyword, subType } }),
+  searchAirports: (keyword, limit = 10) => 
+    api.get(`/api/v1/flights/airports`, { params: { keyword, limit } }),
+  searchAirportsByCity: (city, limit = 10) =>
+    api.get(`/api/v1/flights/airports/city`, { params: { city, limit } }),
   searchFlights: (params) => 
-    api.get(`/api/v1/flights/search`, { params }), // origin, destination, departureDate, adults, travelClass
-  confirmFlightPricing: (offer) => 
-    api.post(`/api/v1/flights/pricing`, { offer }),
+    api.get(`/api/v1/flights/search`, { params }), // depIata, arrIata, flightDate, limit
+  getFlightStatus: (flightIata, flightDate) =>
+    api.get(`/api/v1/flights/status`, { params: { flightIata, flightDate } }),
   getAirlines: (codes) => 
     api.get(`/api/v1/flights/airlines`, { params: { codes } }),
 
@@ -18,18 +20,28 @@ export const travelApi = {
     api.get(`/api/v1/weather/forecast`, { params: { city, lat, lon } }),
 
   // Attractions
-  searchAttractionsByCity: (city, limit = 20, radius = 10000, categories) => 
-    api.get(`/api/v1/attractions/search/city`, { params: { city, limit, radius, categories } }),
-  searchAttractionsNearby: (lat, lon, limit = 20, radius = 5000, categories) => 
-    api.get(`/api/v1/attractions/search/nearby`, { params: { lat, lon, limit, radius, categories } }),
+  searchAttractionsByCity: (city, limit = 20, radius = 10000, kinds) => 
+    api.get(`/api/v1/attractions/city`, { params: { city, limit, radius, kinds } }),
+  searchAttractionsByCategory: (city, category, limit = 20, radius = 12000) => 
+    api.get(`/api/v1/attractions/category`, { params: { city, category, limit, radius } }),
+  searchAttractionsNearby: (lat, lon, limit = 20, radius = 5000, kinds) => 
+    api.get(`/api/v1/attractions/nearby`, { params: { lat, lon, limit, radius, kinds } }),
   getAttractionDetails: (xid) => 
     api.get(`/api/v1/attractions/${xid}`),
 
   // Restaurants
   searchRestaurantsByCity: (city, limit = 20, radius = 5000, cuisine, openNow, minPrice, maxPrice) => 
-    api.get(`/api/v1/restaurants/search/city`, { params: { city, limit, radius, cuisine, openNow, minPrice, maxPrice } }),
+    api.get(`/api/v1/restaurants/city`, { params: { city, limit, radius, cuisine, openNow, minPrice, maxPrice } }),
   searchRestaurantsNearby: (lat, lon, limit = 20, radius = 2000, cuisine, openNow, minPrice, maxPrice) => 
-    api.get(`/api/v1/restaurants/search/nearby`, { params: { lat, lon, limit, radius, cuisine, openNow, minPrice, maxPrice } }),
+    api.get(`/api/v1/restaurants/nearby`, { params: { lat, lon, limit, radius, cuisine, openNow, minPrice, maxPrice } }),
   getRestaurantDetails: (fsqId) => 
     api.get(`/api/v1/restaurants/${fsqId}`),
+
+  // Hotels
+  searchHotelsByCity: (city, limit = 20, radius = 5000) =>
+    api.get(`/api/v1/hotels/search`, { params: { city, limit, radius } }),
+  searchHotelsNearby: (lat, lon, limit = 20, radius = 2000) =>
+    api.get(`/api/v1/hotels/nearby`, { params: { lat, lon, limit, radius } }),
+  getHotelDetails: (fsqId) =>
+    api.get(`/api/v1/hotels/${fsqId}`),
 };

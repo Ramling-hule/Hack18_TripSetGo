@@ -74,6 +74,22 @@ exports.searchByCity = asyncHandler(async (req, res) => {
   )
 })
 
+// ── Category specific searches ────────────────────────────────────────────────
+
+exports.searchByCategory = asyncHandler(async (req, res) => {
+  const { city, limit, radius, category } = req.query
+  // Basic category map (should match provider's map or just pass raw IDs)
+  const map = { museums: '10027,10040', parks: '16032', historical: '16017', attractions: '16000,16020' }
+  const catId = map[category] || category || '16000'
+
+  const result = await attractionsService.searchByCategory(city, catId, {
+    limit: parseInt(limit, 10) || 20,
+    radius: parseInt(radius, 10) || 12000,
+  })
+
+  success(res, result, result.total > 0 ? `Found ${result.total} ${category || 'attraction'}s in ${city}` : `No ${category || 'attraction'}s found in ${city}`)
+})
+
 // ── GET /api/v1/attractions/nearby ────────────────────────────────────────────
 
 /**
