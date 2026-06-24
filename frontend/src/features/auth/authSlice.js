@@ -1,106 +1,90 @@
-// src/features/auth/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import api from '@/services/api'
+import { authApi } from './authApi'
 
-// ── Async Thunks ─────────────────────────────────────────────────────────
+// ── Async Thunk Wrappers for Backward Compatibility ──────────────────────────
 
-export const signup = createAsyncThunk('auth/signup', async (data, { rejectWithValue }) => {
+export const signup = createAsyncThunk('auth/signup', async (data, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post('/api/v1/auth/signup', data)
-    return res.data.data
+    return await dispatch(authApi.endpoints.signup.initiate(data)).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Signup failed')
+    return rejectWithValue(err.data?.message || err.message || 'Signup failed')
   }
 })
 
-export const verifyOTP = createAsyncThunk('auth/verifyOTP', async (data, { rejectWithValue }) => {
+export const verifyOTP = createAsyncThunk('auth/verifyOTP', async (data, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post('/api/v1/auth/verify-otp', data)
-    return res.data.data
+    return await dispatch(authApi.endpoints.verifyOTP.initiate(data)).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'OTP verification failed')
+    return rejectWithValue(err.data?.message || err.message || 'OTP verification failed')
   }
 })
 
-export const login = createAsyncThunk('auth/login', async (data, { rejectWithValue }) => {
+export const login = createAsyncThunk('auth/login', async (data, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post('/api/v1/auth/login', data)
-    const payload = res.data.data
-    // MFA challenge — backend returns { mfaRequired: true, mfaToken }
-    if (payload.mfaRequired) {
-      return { mfaRequired: true, mfaToken: payload.mfaToken }
-    }
-    const { accessToken, user } = payload
-    localStorage.setItem('accessToken', accessToken)
-    return { user, accessToken }
+    return await dispatch(authApi.endpoints.login.initiate(data)).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Login failed')
+    return rejectWithValue(err.data?.message || err.message || 'Login failed')
   }
 })
 
-export const mfaVerify = createAsyncThunk('auth/mfaVerify', async (data, { rejectWithValue }) => {
+export const mfaVerify = createAsyncThunk('auth/mfaVerify', async (data, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post('/api/v1/auth/mfa/verify-login', data)
-    const { accessToken, user } = res.data.data
-    localStorage.setItem('accessToken', accessToken)
-    return { user, accessToken }
+    return await dispatch(authApi.endpoints.mfaVerify.initiate(data)).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'MFA verification failed')
+    return rejectWithValue(err.data?.message || err.message || 'MFA verification failed')
   }
 })
 
-export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
+export const logout = createAsyncThunk('auth/logout', async (_, { dispatch, rejectWithValue }) => {
   try {
-    await api.post('/api/v1/auth/logout')
+    const result = await dispatch(authApi.endpoints.logout.initiate()).unwrap()
     localStorage.removeItem('accessToken')
+    return result
   } catch (err) {
     localStorage.removeItem('accessToken')
-    return rejectWithValue(err.response?.data?.message || 'Logout failed')
+    return rejectWithValue(err.data?.message || err.message || 'Logout failed')
   }
 })
 
-export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { rejectWithValue }) => {
+export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.get('/api/v1/users/me')
-    return res.data.data
+    return await dispatch(authApi.endpoints.fetchMe.initiate(undefined, { forceRefetch: true })).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to fetch user')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to fetch user')
   }
 })
 
-export const forgotPassword = createAsyncThunk('auth/forgotPassword', async (data, { rejectWithValue }) => {
+export const forgotPassword = createAsyncThunk('auth/forgotPassword', async (data, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post('/api/v1/auth/forgot-password', data)
-    return res.data.message
+    return await dispatch(authApi.endpoints.forgotPassword.initiate(data)).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to send reset email')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to send reset email')
   }
 })
 
-export const resetPassword = createAsyncThunk('auth/resetPassword', async (data, { rejectWithValue }) => {
+export const resetPassword = createAsyncThunk('auth/resetPassword', async (data, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post('/api/v1/auth/reset-password', data)
-    return res.data.message
+    return await dispatch(authApi.endpoints.resetPassword.initiate(data)).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Reset failed')
+    return rejectWithValue(err.data?.message || err.message || 'Reset failed')
   }
 })
 
-// ── Slice ─────────────────────────────────────────────────────────────────
+const initialState = {
+  user: null,
+  accessToken: localStorage.getItem('accessToken') || null,
+  isAuthenticated: false,
+  loading: false,
+  error: null,
+  successMessage: null,
+  pendingEmail: null, // used for OTP flow
+  mfaPending: false,  // true when MFA challenge is active
+  mfaToken: null,     // temporary MFA token from backend
+}
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState: {
-    user: null,
-    accessToken: localStorage.getItem('accessToken') || null,
-    isAuthenticated: false,
-    loading: false,
-    error: null,
-    successMessage: null,
-    pendingEmail: null, // used for OTP flow
-    mfaPending: false,  // true when MFA challenge is active
-    mfaToken: null,     // temporary MFA token from backend
-  },
+  initialState,
   reducers: {
     clearError: (state) => { state.error = null },
     clearSuccess: (state) => { state.successMessage = null },
@@ -120,48 +104,75 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     // Signup
     builder
-      .addCase(signup.pending,   (state) => { state.loading = true; state.error = null })
+      .addCase(signup.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
       .addCase(signup.fulfilled, (state, { payload }) => {
         state.loading = false
-        state.pendingEmail = payload.email
+        const data = payload.data || payload
+        state.pendingEmail = data.email
         state.successMessage = 'OTP sent to your email'
       })
-      .addCase(signup.rejected,  (state, { payload }) => { state.loading = false; state.error = payload })
+      .addCase(signup.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = payload
+      })
 
     // OTP
-      .addCase(verifyOTP.pending,   (state) => { state.loading = true; state.error = null })
+      .addCase(verifyOTP.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
       .addCase(verifyOTP.fulfilled, (state) => {
         state.loading = false
         state.successMessage = 'Email verified! Please log in.'
       })
-      .addCase(verifyOTP.rejected,  (state, { payload }) => { state.loading = false; state.error = payload })
+      .addCase(verifyOTP.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = payload
+      })
 
     // Login
-      .addCase(login.pending,   (state) => { state.loading = true; state.error = null })
+      .addCase(login.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
       .addCase(login.fulfilled, (state, { payload }) => {
         state.loading = false
-        if (payload.mfaRequired) {
+        const data = payload.data || payload
+        if (data.mfaRequired) {
           state.mfaPending = true
-          state.mfaToken   = payload.mfaToken
+          state.mfaToken   = data.mfaToken
         } else {
-          state.user = payload.user
-          state.accessToken = payload.accessToken
+          state.user = data.user
+          state.accessToken = data.accessToken
           state.isAuthenticated = true
         }
       })
-      .addCase(login.rejected,  (state, { payload }) => { state.loading = false; state.error = payload })
+      .addCase(login.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = payload
+      })
 
     // MFA verify
-      .addCase(mfaVerify.pending,   (state) => { state.loading = true; state.error = null })
+      .addCase(mfaVerify.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
       .addCase(mfaVerify.fulfilled, (state, { payload }) => {
         state.loading = false
-        state.user = payload.user
-        state.accessToken = payload.accessToken
+        const data = payload.data || payload
+        state.user = data.user
+        state.accessToken = data.accessToken
         state.isAuthenticated = true
         state.mfaPending = false
         state.mfaToken   = null
       })
-      .addCase(mfaVerify.rejected,  (state, { payload }) => { state.loading = false; state.error = payload })
+      .addCase(mfaVerify.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = payload
+      })
 
     // Logout
       .addCase(logout.fulfilled, (state) => {
@@ -173,8 +184,13 @@ const authSlice = createSlice({
       })
 
     // FetchMe
+      .addCase(fetchMe.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
       .addCase(fetchMe.fulfilled, (state, { payload }) => {
-        state.user = payload
+        const data = payload.data || payload
+        state.user = data
         state.isAuthenticated = true
         state.loading = false
       })
@@ -182,16 +198,36 @@ const authSlice = createSlice({
         state.user = null
         state.isAuthenticated = false
         state.accessToken = null
-        localStorage.removeItem('accessToken')
+        state.loading = false
       })
 
-    // Forgot/Reset password
-      .addCase(forgotPassword.pending,   (state) => { state.loading = true; state.error = null })
-      .addCase(forgotPassword.fulfilled, (state, { payload }) => { state.loading = false; state.successMessage = payload })
-      .addCase(forgotPassword.rejected,  (state, { payload }) => { state.loading = false; state.error = payload })
-      .addCase(resetPassword.pending,    (state) => { state.loading = true; state.error = null })
-      .addCase(resetPassword.fulfilled,  (state, { payload }) => { state.loading = false; state.successMessage = payload })
-      .addCase(resetPassword.rejected,   (state, { payload }) => { state.loading = false; state.error = payload })
+    // Forgot password
+      .addCase(forgotPassword.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(forgotPassword.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.successMessage = payload?.message || 'Reset password email sent'
+      })
+      .addCase(forgotPassword.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = payload
+      })
+
+    // Reset password
+      .addCase(resetPassword.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(resetPassword.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.successMessage = payload?.message || 'Password reset successful'
+      })
+      .addCase(resetPassword.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = payload
+      })
   },
 })
 

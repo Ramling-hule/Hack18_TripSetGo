@@ -1,30 +1,25 @@
-// src/features/planner/plannerSlice.js
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit'
-import api from '@/services/api'
+import { plannerApi } from './plannerApi'
 
-// ── Async Thunks ─────────────────────────────────────────────────────────
+// ── Async Thunk Wrappers for Backward Compatibility ──────────────────────────
 
-export const generatePlan = createAsyncThunk('planner/generatePlan', async (formData, { rejectWithValue }) => {
+export const generatePlan = createAsyncThunk('planner/generatePlan', async (formData, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post('/api/v1/trips', formData)
-    return res.data.data
+    return await dispatch(plannerApi.endpoints.generatePlan.initiate(formData)).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to generate plan')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to generate plan')
   }
 })
 
-export const saveTrip = createAsyncThunk('planner/saveTrip', async ({ tripId, selections }, { rejectWithValue }) => {
+export const saveTrip = createAsyncThunk('planner/saveTrip', async ({ tripId, selections }, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.put(`/api/v1/trips/${tripId}`, { selections })
-    return res.data.data
+    return await dispatch(plannerApi.endpoints.saveTripSelections.initiate({ tripId, selections })).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to save trip')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to save trip')
   }
 })
 
-// Regenerate a single day of the live plan. Sends the names already used on the
-// other days as `avoid` so the AI proposes fresh activities.
-export const regenerateDay = createAsyncThunk('planner/regenerateDay', async ({ dayIndex }, { getState, rejectWithValue }) => {
+export const regenerateDay = createAsyncThunk('planner/regenerateDay', async ({ dayIndex }, { getState, dispatch, rejectWithValue }) => {
   try {
     const { plan, form } = getState().planner
     if (!plan?.itinerary?.length) return rejectWithValue('No plan to regenerate')
@@ -41,7 +36,7 @@ export const regenerateDay = createAsyncThunk('planner/regenerateDay', async ({ 
       })
     })
 
-    const res = await api.post('/api/v1/planner/regenerate-day', {
+    const body = {
       source:       form.source,
       destination,
       dayNumber:    dayIndex + 1,
@@ -51,82 +46,81 @@ export const regenerateDay = createAsyncThunk('planner/regenerateDay', async ({ 
       groupType:    form.groupType || 'solo',
       preferences:  form.preferences || [],
       avoid:        avoid.slice(0, 60),
-    })
-    return { dayIndex, day: res.data.data.day, usedFallback: res.data.data.usedFallback }
+    }
+
+    const res = await dispatch(plannerApi.endpoints.regenerateDay.initiate(body)).unwrap()
+    const data = res.data || res
+    return { dayIndex, day: data.day, usedFallback: data.usedFallback }
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to regenerate day')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to regenerate day')
   }
 })
 
-// ── Slice ─────────────────────────────────────────────────────────────────
-
-// ── Drafts: named snapshots of the current selections (persisted on the trip) ──
-export const fetchDrafts = createAsyncThunk('planner/fetchDrafts', async (tripId, { rejectWithValue }) => {
+export const fetchDrafts = createAsyncThunk('planner/fetchDrafts', async (tripId, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.get(`/api/v1/trips/${tripId}/drafts`)
-    return res.data.data
+    return await dispatch(plannerApi.endpoints.getDrafts.initiate(tripId)).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to load drafts')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to load drafts')
   }
 })
 
-export const saveDraft = createAsyncThunk('planner/saveDraft', async ({ tripId, name, selections, liveBudget, lockedDays }, { rejectWithValue }) => {
+export const saveDraft = createAsyncThunk('planner/saveDraft', async ({ tripId, name, selections, liveBudget, lockedDays }, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.post(`/api/v1/trips/${tripId}/drafts`, { name, selections, liveBudget, lockedDays })
-    return res.data.data // { draft, drafts }
+    return await dispatch(plannerApi.endpoints.saveDraft.initiate({ tripId, name, selections, liveBudget, lockedDays })).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to save draft')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to save draft')
   }
 })
 
-export const deleteDraft = createAsyncThunk('planner/deleteDraft', async ({ tripId, draftId }, { rejectWithValue }) => {
+export const deleteDraft = createAsyncThunk('planner/deleteDraft', async ({ tripId, draftId }, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.delete(`/api/v1/trips/${tripId}/drafts/${draftId}`)
-    return res.data.data // { _id, drafts }
+    return await dispatch(plannerApi.endpoints.deleteDraft.initiate({ tripId, draftId })).unwrap()
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to delete draft')
+    return rejectWithValue(err.data?.message || err.message || 'Failed to delete draft')
   }
 })
+
+const initialState = {
+  // Form state
+  form: {
+    source: '',
+    destination: '',
+    startDate: '',
+    endDate: '',
+    budget: '',
+    numTravelers: 1,
+    groupType: 'solo',
+    pace: 'balanced',
+    preferences: [],
+  },
+  // Generated plan from Gemini
+  plan: null,
+  tripId: null,
+  // User selections (live budget tracking)
+  selections: {
+    transport: null,   // { mode, cost_per_person, total_cost }
+    hotel: null,       // { name, tier, price_per_night }
+    food: null,        // { name, cost_per_day, total_cost }
+    activities: [],    // array of { day, slot, activity }
+    favorites: [],     // heartedItems
+  },
+  // UI state
+  loading: false,
+  saving: false,
+  error: null,
+  activeDay: 0,
+  activeTab: 'transport', // transport | hotels | food | itinerary | suggestions
+  // Hero-planner state
+  lockedDays: [],          // day indexes the user has locked from regeneration
+  regeneratingDay: null,   // day index currently being regenerated (for spinners)
+  drafts: [],              // saved selection snapshots for the current trip
+  draftsLoading: false,
+  savingDraft: false,
+}
 
 const plannerSlice = createSlice({
   name: 'planner',
-  initialState: {
-    // Form state
-    form: {
-      source: '',
-      destination: '',
-      startDate: '',
-      endDate: '',
-      budget: '',
-      numTravelers: 1,
-      groupType: 'solo',
-      pace: 'balanced',
-      preferences: [],
-    },
-    // Generated plan from Gemini
-    plan: null,
-    tripId: null,
-    // User selections (live budget tracking)
-    selections: {
-      transport: null,   // { mode, cost_per_person, total_cost }
-      hotel: null,       // { name, tier, price_per_night }
-      food: null,        // { name, cost_per_day, total_cost }
-      activities: [],    // array of { day, slot, activity }
-      favorites: [],     // heartedItems
-    },
-    // UI state
-    loading: false,
-    saving: false,
-    error: null,
-    activeDay: 0,
-    activeTab: 'transport', // transport | hotels | food | itinerary | suggestions
-    // Hero-planner state
-    lockedDays: [],          // day indexes the user has locked from regeneration
-    regeneratingDay: null,   // day index currently being regenerated (for spinners)
-    drafts: [],              // saved selection snapshots for the current trip
-    draftsLoading: false,
-    savingDraft: false,
-  },
+  initialState,
   reducers: {
     updateForm: (state, action) => {
       state.form = { ...state.form, ...action.payload }
@@ -214,24 +208,39 @@ const plannerSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(generatePlan.pending,   (state) => { state.loading = true; state.error = null; state.plan = null })
+      .addCase(generatePlan.pending, (state) => {
+        state.loading = true
+        state.error = null
+        state.plan = null
+      })
       .addCase(generatePlan.fulfilled, (state, { payload }) => {
         state.loading = false
-        state.plan = payload.plan
-        state.tripId = payload.tripId || payload._id
+        const data = payload.data || payload
+        state.plan = data.plan
+        state.tripId = data.tripId || data._id
         // Auto-select recommended options
-        if (payload.plan?.transport_options?.length) {
-          const rec = payload.plan.transport_options.find(t => t.recommended) || payload.plan.transport_options[0]
+        if (data.plan?.transport_options?.length) {
+          const rec = data.plan.transport_options.find(t => t.recommended) || data.plan.transport_options[0]
           state.selections.transport = rec
         }
-        if (payload.plan?.hotel_options?.length)  state.selections.hotel = payload.plan.hotel_options[0]
-        if (payload.plan?.food_plans?.length)      state.selections.food  = payload.plan.food_plans[0]
+        if (data.plan?.hotel_options?.length)  state.selections.hotel = data.plan.hotel_options[0]
+        if (data.plan?.food_plans?.length)      state.selections.food  = data.plan.food_plans[0]
       })
-      .addCase(generatePlan.rejected,  (state, { payload }) => { state.loading = false; state.error = payload })
+      .addCase(generatePlan.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = payload
+      })
 
-      .addCase(saveTrip.pending,   (state) => { state.saving = true })
-      .addCase(saveTrip.fulfilled, (state) => { state.saving = false })
-      .addCase(saveTrip.rejected,  (state, { payload }) => { state.saving = false; state.error = payload })
+      .addCase(saveTrip.pending, (state) => {
+        state.saving = true
+      })
+      .addCase(saveTrip.fulfilled, (state) => {
+        state.saving = false
+      })
+      .addCase(saveTrip.rejected, (state, { payload }) => {
+        state.saving = false
+        state.error = payload
+      })
 
       .addCase(regenerateDay.pending, (state, { meta }) => {
         state.regeneratingDay = meta.arg.dayIndex
@@ -241,13 +250,11 @@ const plannerSlice = createSlice({
         state.regeneratingDay = null
         const slot = state.plan?.itinerary?.[payload.dayIndex]
         if (slot) {
-          // Keep the original day number/date; swap in the new activities.
           state.plan.itinerary[payload.dayIndex] = {
             ...payload.day,
             day:  slot.day ?? payload.day.day,
             date: slot.date,
           }
-          // Drop now-stale activity selections for this day so the live budget stays correct.
           state.selections.activities = state.selections.activities.filter((a) => a.day !== payload.dayIndex)
         }
       })
@@ -256,15 +263,36 @@ const plannerSlice = createSlice({
         state.error = payload
       })
 
-      .addCase(fetchDrafts.pending,   (state) => { state.draftsLoading = true })
-      .addCase(fetchDrafts.fulfilled, (state, { payload }) => { state.draftsLoading = false; state.drafts = payload || [] })
-      .addCase(fetchDrafts.rejected,  (state) => { state.draftsLoading = false })
+      .addCase(fetchDrafts.pending, (state) => {
+        state.draftsLoading = true
+      })
+      .addCase(fetchDrafts.fulfilled, (state, { payload }) => {
+        state.draftsLoading = false
+        const data = payload.data || payload
+        state.drafts = data || []
+      })
+      .addCase(fetchDrafts.rejected, (state) => {
+        state.draftsLoading = false
+      })
 
-      .addCase(saveDraft.pending,   (state) => { state.savingDraft = true; state.error = null })
-      .addCase(saveDraft.fulfilled, (state, { payload }) => { state.savingDraft = false; state.drafts = payload.drafts || [] })
-      .addCase(saveDraft.rejected,  (state, { payload }) => { state.savingDraft = false; state.error = payload })
+      .addCase(saveDraft.pending, (state) => {
+        state.savingDraft = true
+        state.error = null
+      })
+      .addCase(saveDraft.fulfilled, (state, { payload }) => {
+        state.savingDraft = false
+        const data = payload.data || payload
+        state.drafts = data.drafts || []
+      })
+      .addCase(saveDraft.rejected, (state, { payload }) => {
+        state.savingDraft = false
+        state.error = payload
+      })
 
-      .addCase(deleteDraft.fulfilled, (state, { payload }) => { state.drafts = payload.drafts || [] })
+      .addCase(deleteDraft.fulfilled, (state, { payload }) => {
+        const data = payload.data || payload
+        state.drafts = data.drafts || []
+      })
   },
 })
 
@@ -274,8 +302,6 @@ export const {
   toggleActivity, toggleFavorite, toggleDayLock, loadDraft,
   setActiveDay, setActiveTab, clearError,
 } = plannerSlice.actions
-
-// ── Selectors ─────────────────────────────────────────────────────────────
 
 export const selectPlanner      = (state) => state.planner
 export const selectPlan         = (state) => state.planner.plan

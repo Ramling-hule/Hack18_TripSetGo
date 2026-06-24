@@ -49,21 +49,23 @@ export const deleteUser = createAsyncThunk('admin/deleteUser', async (id, { reje
   }
 })
 
-export const fetchReviews = createAsyncThunk('admin/fetchReviews', async (params, { rejectWithValue }) => {
+import { reviewsApi } from '../reviews/reviewsApi'
+
+export const fetchReviews = createAsyncThunk('admin/fetchReviews', async (params, { dispatch, rejectWithValue }) => {
   try {
-    const res = await api.get('/api/v1/admin/reviews', { params })
-    return res.data.data
+    const result = await dispatch(reviewsApi.endpoints.getAdminReviews.initiate(params)).unwrap()
+    return result
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to fetch reviews')
+    return rejectWithValue(err.message || 'Failed to fetch reviews')
   }
 })
 
-export const deleteReview = createAsyncThunk('admin/deleteReview', async (id, { rejectWithValue }) => {
+export const deleteReview = createAsyncThunk('admin/deleteReview', async (id, { dispatch, rejectWithValue }) => {
   try {
-    await api.delete(`/api/v1/admin/reviews/${id}`)
+    await dispatch(reviewsApi.endpoints.deleteReviewAdmin.initiate(id)).unwrap()
     return id
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to delete review')
+    return rejectWithValue(err.message || 'Failed to delete review')
   }
 })
 

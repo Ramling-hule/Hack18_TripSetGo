@@ -8,6 +8,7 @@ import notificationsReducer from '@/features/notifications/notificationsSlice'
 import subscriptionReducer from '@/features/subscription/subscriptionSlice'
 import adminReducer        from '@/features/admin/adminSlice'
 import expensesReducer     from '@/features/expenses/expensesSlice'
+import { apiSlice }        from './apiSlice'
 
 import { combineReducers } from '@reduxjs/toolkit'
 
@@ -20,10 +21,11 @@ const appReducer = combineReducers({
   subscription:  subscriptionReducer,
   admin:         adminReducer,
   expenses:      expensesReducer,
+  [apiSlice.reducerPath]: apiSlice.reducer,
 })
 
 const rootReducer = (state, action) => {
-  if (action.type === 'auth/logout/fulfilled' || action.type === 'auth/logout') {
+  if (action.type === 'auth/logout/fulfilled' || action.type === 'auth/logout' || action.type === 'auth/logoutAction') {
     state = undefined
   }
   return appReducer(state, action)
@@ -38,7 +40,7 @@ const store = configureStore({
         ignoredActions: ['planner/setPlan'],
         ignoredPaths: ['planner.plan'],
       },
-    }),
+    }).concat(apiSlice.middleware),
 })
 
 export default store
