@@ -11,7 +11,9 @@ const processor = async (job) => {
   if (action === 'warm-all') {
     await cacheWarmer.warmAll();
   } else {
-    throw new Error(`Unsupported action: ${action}`);
+    // Unknown/missing action — likely a stale job from a previous deploy.
+    // Log and skip rather than throwing so it doesn't flood the DLQ.
+    logger.warn(`[Refresh Worker] Skipping job ${job.id} — unknown action: "${action}"`);
   }
 };
 
