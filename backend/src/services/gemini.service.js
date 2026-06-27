@@ -11,10 +11,17 @@ const MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
  * Returns a JSON object matching the TripSetGo plan schema.
  * Falls back to null on failure — caller should use fallbackPlanner.
  */
-async function generateTripPlan({ source, destination, startDate, endDate, budget, numTravelers, groupType, preferences = [], pace = 'balanced' }) {
-  const model = genAI.getGenerativeModel({ model: MODEL })
+async function generateTripPlan({ source, destination, startDate, endDate, budget, numTravelers, groupType, preferences = [], pace = 'balanced' }, contextPackage = null, chatHistory = []) {
+  const model = genAI.getGenerativeModel({ 
+    model: MODEL,
+    generationConfig: { temperature: 0.2 }
+  })
 
   const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) || 1
+
+  const chatHistoryStr = chatHistory?.length > 0 
+    ? chatHistory.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n')
+    : 'None';
 
   const prompt = `
 You are an expert travel planner AI. Generate a detailed, structured travel plan in valid JSON format only.
@@ -29,6 +36,25 @@ Trip Details:
 - Travelers: ${numTravelers} (${groupType})
 - Preferences: ${preferences.join(', ') || 'general travel'}
 - Pace: ${pace} (relaxed = fewer, unhurried activities per day; packed = more, back-to-back)
+
+User Chat History & Specific Requests:
+${chatHistoryStr}
+(CRITICAL: You MUST prioritize any specific places, hotels, themes, or routing preferences the user requested in the chat above).
+
+${contextPackage ? `
+AVAILABLE_CONTEXT (Use ONLY this data if available for hotels, restaurants, and attractions to avoid hallucinating dummy places):
+${JSON.stringify(contextPackage, null, 2)}
+
+CRITICAL RULES FOR RAG AND CHAT:
+1. You MUST prioritize recommending hotels, restaurants, and attractions that exist in the AVAILABLE_CONTEXT.
+2. If the context is empty for a category, use your internal knowledge to suggest REAL, EXISTING places in the destination. NEVER use generic placeholder names like "Agra Budget Stay", "Local Flavors Trail", etc.
+3. If the user mentioned a specific location or preference in the chat, prioritize placing it in the itinerary.
+4. For hotels suggested near the user's specific requested locations, explicitly include their approximate distance in the location or name field (e.g., '2.5 km from <location>').
+` : `
+CRITICAL RULES:
+1. You MUST use your internal knowledge to suggest REAL, EXISTING hotels, restaurants, and attractions.
+2. NEVER use generic placeholder names like "Agra Budget Stay", "City Center Hotel", or "Local Flavors Trail". Every name must be a real business or location.
+`}
 
 Return ONLY valid JSON (no markdown, no explanation) with this exact schema:
 {
@@ -112,7 +138,10 @@ Rules:
  * Falls back to null on failure — caller should use fallbackPlanner.
  */
 async function generateDetailedPlan({ destination, budget, days, interests = [] }, contextPackage = null) {
-  const model = genAI.getGenerativeModel({ model: MODEL })
+  const model = genAI.getGenerativeModel({ 
+    model: MODEL,
+    generationConfig: { temperature: 0.2 }
+  })
 
   const interestStr = interests.length > 0 ? interests.join(', ') : 'general sightseeing'
 
@@ -126,15 +155,19 @@ Trip Details:
 - Traveler Interests: ${interestStr}
 
 ${contextPackage ? `
-AVAILABLE_CONTEXT (Use ONLY this data for hotels, restaurants, attractions, flights, and weather):
+AVAILABLE_CONTEXT (Use ONLY this data if available for hotels, restaurants, attractions, flights, and weather):
 ${JSON.stringify(contextPackage, null, 2)}
 
 CRITICAL RULES FOR RAG:
-1. You MUST ONLY recommend hotels, restaurants, and attractions that exist in the AVAILABLE_CONTEXT.
-2. Do not hallucinate or invent places.
-3. Use the exact names and prices from the context.
+1. You MUST prioritize recommending hotels, restaurants, and attractions that exist in the AVAILABLE_CONTEXT.
+2. If the context is empty for a category, use your internal knowledge to suggest REAL, EXISTING places. NEVER use generic placeholder names like "Agra Budget Stay".
+3. Use realistic prices for India (INR).
 4. If flights are provided, mention them in the local_tips or itinerary.
-` : ''}
+` : `
+CRITICAL RULES:
+1. You MUST use your internal knowledge to suggest REAL, EXISTING hotels, restaurants, and attractions.
+2. NEVER use generic placeholder names like "Agra Budget Stay", "City Center Hotel". Every name must be a real business or location.
+`}
 
 Return ONLY a valid JSON object (no markdown, no code fences, no explanation) with EXACTLY this schema:
 

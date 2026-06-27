@@ -1,22 +1,21 @@
  // src/pages/Dashboard/Planner.jsx
-import { useState, useEffect, Fragment, useRef } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Sparkles, Send, RotateCcw, DollarSign, Train, Hotel, Utensils,
+  Sparkles, RotateCcw, Train, Hotel, Utensils,
   CalendarDays, Lightbulb, RefreshCw, Lock, Unlock, Layers, Save,
-  Trash2, Download, Backpack, Plus, MapPin, Navigation, Clock,
-  Users, TrendingUp, Zap, Star, ChevronRight, Plane, Bus,
-  Sun, Moon, Sunrise, Cloud, Package, AlertTriangle
+  Trash2, Download, Backpack, MapPin, Navigation, Clock,
+  Users, Plane, Bus, Sun, Moon, Sunrise, Package, AlertTriangle
 } from 'lucide-react'
-import api from '@/services/api'
 import {
   selectPlanner, selectPlan, selectPlannerForm, selectPlannerLoading,
   selectLiveBudget, selectBudgetStatus,
-  updateForm, generatePlan, resetPlan, selectTransport, selectHotel, selectFood,
+  updateForm, generatePlan, resetPlan, setPlan, setGenerationFailed, selectTransport, selectHotel, selectFood,
   setActiveDay, toggleDayLock, toggleActivity, regenerateDay,
   setActiveTab, fetchDrafts, saveDraft, loadDraft, deleteDraft
 } from '@/features/planner/plannerSlice'
+import { useSocket } from '@/hooks/useSocket'
 import BudgetBar from './components/Planner/BudgetBar'
 import TripForm from './components/Planner/TripForm'
 import TripAssistant from './components/Planner/TripAssistant'
@@ -27,27 +26,6 @@ import Modal from '@/components/common/Modal'
 
 /* ─── Tailwind Utility Classes ─── */
 const plannerGlassPanelClass = 'bg-[rgba(26,31,47,0.7)] backdrop-blur-[40px] border border-solid border-[rgba(255,255,255,0.08)] border-t-[rgba(255,255,255,0.12)] shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]'
-const plannerSectionHeaderClass = 'flex items-center gap-2 mb-4 pb-2.5 border-b border-solid border-[rgba(255,255,255,0.05)] text-[0.72rem] font-bold uppercase tracking-wider font-sans'
-const plannerSectionNumClass = 'px-2 py-0.5 rounded-[5px] text-[0.7rem] font-extrabold tracking-wider'
-const plannerInputGroupClass = 'relative flex flex-col gap-1.5 w-full [&>label]:block [&>label]:text-[0.75rem] [&>label]:font-medium [&>label]:text-text-secondary [&>label]:mb-1.5 [&>label]:font-sans'
-const plannerInputClass = 'w-full bg-[rgba(255,255,255,0.04)] border border-solid border-[rgba(255,255,255,0.1)] rounded-lg text-text-primary font-sans text-sm py-2.5 pl-9 pr-3.5 outline-none transition-all duration-200 color-scheme-dark placeholder:text-text-muted focus:border-[rgba(14,165,233,0.5)] focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)]'
-const plannerInputIconClass = 'absolute left-3 top-1/2 -translate-y-1/2 text-text-muted flex items-center'
-const plannerChipLabelClass = 'text-[0.75rem] font-medium text-text-muted mb-2 font-sans'
-const plannerChipClass = (active, isSecondary) =>
-  `px-3.5 py-1.5 rounded-full text-[0.78rem] font-semibold border border-solid text-text-muted cursor-pointer transition-all duration-200 font-sans ` +
-  (active
-    ? isSecondary
-      ? 'bg-[rgba(20,184,166,0.15)] border-[rgba(20,184,166,0.5)] text-[#14B8A6] shadow-[0_0_10px_rgba(20,184,166,0.15)]'
-      : 'bg-[rgba(14,165,233,0.15)] border-[rgba(14,165,233,0.5)] text-[#0EA5E9] shadow-[0_0_10px_rgba(14,165,233,0.15)]'
-    : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.08)] hover:text-text-primary')
-
-const plannerPrefChipClass = (active) =>
-  `p-1.5 rounded-lg text-[0.75rem] font-semibold border border-solid text-text-muted cursor-pointer transition-all duration-200 text-center font-sans ` +
-  (active
-    ? 'bg-gradient-to-r from-[rgba(14,165,233,0.18)] to-[rgba(139,92,246,0.18)] border-[rgba(14,165,233,0.4)] text-[#4ae6f0] shadow-[0_0_10px_rgba(14,165,233,0.1)]'
-    : 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.07)] hover:bg-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.3)] hover:text-text-primary hover:-translate-y-px')
-
-const plannerGenerateBtnClass = 'w-full py-3.5 px-6 bg-gradient-to-r from-primary via-secondary to-accent bg-[length:200%_auto] border-none rounded-xl text-white font-bold text-[0.95rem] font-[\'Plus_Jakarta_Sans\',sans-serif] cursor-pointer flex items-center justify-center gap-2.5 transition-all duration-300 shadow-[0_4px_20px_rgba(14,165,233,0.3)] tracking-wider hover:not-disabled:bg-right hover:not-disabled:-translate-y-0.5 hover:not-disabled:shadow-[0_8px_28px_rgba(14,165,233,0.4)] active:not-disabled:translate-y-0 disabled:opacity-65 disabled:cursor-not-allowed'
 
 const planTabBtnClass = (active) =>
   `inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[0.8rem] font-semibold border border-solid cursor-pointer transition-all duration-200 font-sans whitespace-nowrap ` +
@@ -68,30 +46,6 @@ const daySlotCardClass = (selected) =>
     : 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.12)] hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.05)]')
 
 /* ─── Data constants ─── */
-const GROUP_TYPES = [
-  { value: 'solo',     label: '🧳 Solo' },
-  { value: 'couple',   label: '💑 Couple' },
-  { value: 'family',   label: '👨‍👩‍👧 Family' },
-  { value: 'friends',  label: '👯 Friends' },
-  { value: 'business', label: '💼 Business' },
-]
-const PACE_OPTIONS = [
-  { value: 'relaxed',  label: '🌿 Relaxed' },
-  { value: 'balanced', label: '⚖️ Balanced' },
-  { value: 'packed',   label: '⚡ Packed' },
-]
-const PREFERENCES = [
-  { value: 'beach',       label: '🏖️ Beach' },
-  { value: 'mountains',   label: '⛰️ Mountains' },
-  { value: 'culture',     label: '🏛️ Culture' },
-  { value: 'food',        label: '🍜 Food' },
-  { value: 'adventure',   label: '🪂 Adventure' },
-  { value: 'nightlife',   label: '🎉 Nightlife' },
-  { value: 'wildlife',    label: '🦁 Wildlife' },
-  { value: 'relaxation',  label: '🧘 Relaxation' },
-  { value: 'shopping',    label: '🛍️ Shopping' },
-  { value: 'history',     label: '🏰 History' },
-]
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
 
@@ -125,19 +79,44 @@ export default function Planner() {
   const loading    = useSelector(selectPlannerLoading)
   const liveBudget = useSelector(selectLiveBudget)
   const status     = useSelector(selectBudgetStatus)
-  const { selections, activeDay, activeTab, lockedDays, regeneratingDay, tripId, drafts, draftsLoading, savingDraft } = useSelector(selectPlanner)
+  const { selections, activeDay, activeTab, lockedDays, regeneratingDay, tripId, drafts, draftsLoading, savingDraft, copilotConversationId } = useSelector(selectPlanner)
   const error      = useSelector(s => s.planner.error)
 
   const [compareIds, setCompareIds]     = useState([])
   const [saveDraftOpen, setSaveDraftOpen] = useState(false)
   const [draftName, setDraftName]         = useState('')
+  const socket = useSocket()
 
   useEffect(() => {
     if (activeTab === 'drafts' && tripId) dispatch(fetchDrafts(tripId))
   }, [activeTab, tripId, dispatch])
 
+  useEffect(() => {
+    if (!socket) return;
+    
+    const handleCompleted = (data) => {
+      if (data.success && data.planData) {
+        dispatch(setPlan({ plan: data.planData, tripId: data.tripId }))
+        window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'Your AI itinerary is ready!' } }))
+      }
+    }
+    
+    const handleFailed = (data) => {
+      dispatch(setGenerationFailed(data.error))
+      window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: `Failed: ${data.error}` } }))
+    }
+
+    socket.on('itinerary:completed', handleCompleted)
+    socket.on('itinerary:failed', handleFailed)
+    
+    return () => {
+      socket.off('itinerary:completed', handleCompleted)
+      socket.off('itinerary:failed', handleFailed)
+    }
+  }, [socket, dispatch])
+
   const handleFormChange = (updates) => dispatch(updateForm(updates))
-  const handleSubmit = async (e) => { e.preventDefault(); await dispatch(generatePlan(form)) }
+  const handleSubmit = async (e) => { e.preventDefault(); await dispatch(generatePlan({ ...form, copilotConversationId })) }
 
   const handleRegenerate = async () => {
     try {
@@ -299,9 +278,16 @@ export default function Planner() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
+              gap: '1.5rem',
+              alignItems: 'stretch',
+            }}
           >
-            {/* Budget Tracker */}
-            <BudgetBar liveBudget={liveBudget} totalBudget={Number(form.budget)} status={status} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {/* Budget Tracker */}
+              <BudgetBar liveBudget={liveBudget} totalBudget={Number(form.budget)} status={status} />
 
             {/* Trip Meta */}
             <div className={plannerGlassPanelClass} style={{
@@ -773,6 +759,9 @@ export default function Planner() {
                 </motion.div>
               )}
             </AnimatePresence>
+            </div>
+            
+            <TripAssistant />
           </motion.div>
         ) : null}
       </AnimatePresence>

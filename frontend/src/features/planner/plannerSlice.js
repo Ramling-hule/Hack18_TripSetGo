@@ -116,6 +116,7 @@ const initialState = {
   drafts: [],              // saved selection snapshots for the current trip
   draftsLoading: false,
   savingDraft: false,
+  copilotConversationId: null,
 }
 
 const plannerSlice = createSlice({
@@ -135,7 +136,7 @@ const plannerSlice = createSlice({
       state.loading = false
       state.error = null
       state.plan = action.payload.plan
-      state.tripId = action.payload.tripId
+      state.tripId = action.payload.tripId || state.tripId
       // Auto-select recommended transport + hotel
       if (action.payload.plan?.transport_options) {
         const rec = action.payload.plan.transport_options.find(t => t.recommended) || action.payload.plan.transport_options[0]
@@ -147,6 +148,10 @@ const plannerSlice = createSlice({
       if (action.payload.plan?.food_plans) {
         state.selections.food = action.payload.plan.food_plans[0]
       }
+    },
+    setGenerationFailed: (state, action) => {
+      state.loading = false
+      state.error = action.payload
     },
     generateFailed: (state, action) => {
       state.loading = false
@@ -210,6 +215,7 @@ const plannerSlice = createSlice({
     },
     setActiveDay: (state, action) => { state.activeDay = action.payload },
     setActiveTab: (state, action) => { state.activeTab = action.payload },
+    setCopilotConversationId: (state, action) => { state.copilotConversationId = action.payload },
     clearError: (state) => { state.error = null },
   },
   extraReducers: (builder) => {
@@ -220,10 +226,25 @@ const plannerSlice = createSlice({
         state.plan = null
       })
       .addCase(generatePlan.fulfilled, (state, { payload }) => {
-        // Note: loading remains true. The background worker will emit a socket event
-        // 'itinerary:completed' when generation finishes, which will trigger setPlan.
         const data = payload.data || payload
-        state.tripId = data.tripId || data._id
+        
+        // If the plan is returned synchronously, process it
+        if (data.plan) {
+          state.loading = false
+          state.plan = data.plan
+          state.tripId = data.tripId || data._id
+          // Auto-select recommended options
+          if (data.plan?.transport_options?.length) {
+            const rec = data.plan.transport_options.find(t => t.recommended) || data.plan.transport_options[0]
+            state.selections.transport = rec
+          }
+          if (data.plan?.hotel_options?.length)  state.selections.hotel = data.plan.hotel_options[0]
+          if (data.plan?.food_plans?.length)      state.selections.food  = data.plan.food_plans[0]
+        } else {
+          // Backend returned 202 Accepted (async queue)
+          state.loading = true
+          state.tripId = data.tripId || data._id
+        }
       })
       .addCase(generatePlan.rejected, (state, { payload }) => {
         state.loading = false
@@ -296,10 +317,10 @@ const plannerSlice = createSlice({
 })
 
 export const {
-  updateForm, resetForm, setPlan, resetPlan,
+  updateForm, resetForm, setPlan, resetPlan, setGenerationFailed, generateFailed,
   selectTransport, selectHotel, selectFood,
   toggleActivity, toggleFavorite, toggleDayLock, loadDraft,
-  setActiveDay, setActiveTab, clearError, generateFailed,
+  setActiveDay, setActiveTab, setCopilotConversationId, clearError,
 } = plannerSlice.actions
 
 export const selectPlanner      = (state) => state.planner
@@ -307,6 +328,7 @@ export const selectPlan         = (state) => state.planner.plan
 export const selectSelections   = (state) => state.planner.selections
 export const selectPlannerForm  = (state) => state.planner.form
 export const selectPlannerLoading = (state) => state.planner.loading
+export const selectCopilotConversationId = (state) => state.planner.copilotConversationId
 
 /** Derived live budget — recomputes only when selections change */
 export const selectLiveBudget = createSelector(

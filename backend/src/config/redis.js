@@ -234,6 +234,17 @@ const isTokenBlacklisted = async (jti) => {
   }
 }
 
+const closeCacheConnection = async () => {
+  if (redisClient) {
+    try {
+      await redisClient.quit();
+    } catch (err) {
+      logger.warn(`⚠️  Failed to quit Redis cache client: ${err.message}`);
+    }
+    redisClient = null;
+  }
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────
 connectRedis()
 
@@ -249,4 +260,6 @@ module.exports = {
   // JWT helpers
   blacklistToken,
   isTokenBlacklisted,
+  // Connection management
+  closeCacheConnection,
 }

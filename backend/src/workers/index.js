@@ -4,6 +4,8 @@ const itineraryWorker = require('./itinerary.worker');
 const emailWorker = require('./email.worker');
 const refreshWorker = require('./refresh.worker');
 const recommendationWorker = require('./recommendation.worker');
+const { closeQueueConnection } = require('../config/queue');
+const { closeCacheConnection } = require('../config/redis');
 
 let initialized = false;
 const activeWorkers = [];
@@ -49,12 +51,16 @@ const stopWorkers = async () => {
 process.once('SIGTERM', async () => {
   logger.info('SIGTERM received — shutting down workers');
   await stopWorkers();
+  await closeQueueConnection();
+  await closeCacheConnection();
   process.exit(0);
 });
 
 process.once('SIGINT', async () => {
   logger.info('SIGINT received — shutting down workers');
   await stopWorkers();
+  await closeQueueConnection();
+  await closeCacheConnection();
   process.exit(0);
 });
 

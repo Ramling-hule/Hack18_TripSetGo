@@ -16,6 +16,10 @@ const signupSchema = {
   }),
 }
 
+const resendOtpSchema = {
+  body: Joi.object({ email }),
+}
+
 const loginSchema = {
   body: Joi.object({
     email,
@@ -45,6 +49,7 @@ const googleTokenSchema = {
 
 module.exports = {
   signupSchema,
+  resendOtpSchema,
   loginSchema,
   verifyOtpSchema,
   forgotPasswordSchema,

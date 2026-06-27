@@ -54,7 +54,13 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const urlString = originalRequest.url || ''
+    const isAuthRoute = urlString.includes('/auth/refresh') || 
+                        urlString.includes('/auth/login') || 
+                        urlString.includes('/auth/signup') ||
+                        urlString.includes('/auth/google/token')
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })

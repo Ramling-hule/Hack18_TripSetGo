@@ -5,6 +5,7 @@ const fallback = require('../planning/fallbackPlanner');
 const ragService = require('../services/rag.service');
 const cacheService = require('../services/cache.service');
 const Trip = require('../models/Trip.model');
+const Message = require('../models/Message.model');
 const { logFailedJob } = require('../services/dlq.service');
 const logger = require('../utils/logger');
 
@@ -13,14 +14,38 @@ const processor = async (job) => {
   logger.info(`[Itinerary Worker] Processing job ${job.id} - Type: ${type}`);
 
   if (type === 'trip') {
-    const { tripId, tripData } = job.data;
+    const { tripId, tripData, copilotConversationId } = job.data;
     const trip = await Trip.findById(tripId);
     if (!trip) {
       throw new Error(`Trip ${tripId} not found`);
     }
 
+    // Fetch Copilot Chat History
+    let chatHistory = [];
+    if (copilotConversationId) {
+      try {
+        const messages = await Message.find({ conversationId: copilotConversationId })
+          .sort({ createdAt: 1 })
+          .lean();
+        chatHistory = messages.map(m => ({ role: m.role || 'user', text: m.text }));
+      } catch (err) {
+        logger.warn(`Failed to fetch copilot history: ${err.message}`);
+      }
+    }
+
+    // Build RAG Context to eliminate dummy data
+    const days = Math.ceil((new Date(tripData.endDate) - new Date(tripData.startDate)) / (1000 * 60 * 60 * 24)) || 1;
+    const input = {
+      source: tripData.source,
+      destination: tripData.destination,
+      startDate: tripData.startDate,
+      budget: tripData.budget,
+      days: days
+    };
+    const contextPackage = await ragService.buildContextPackage(input);
+
     // Try Gemini first, fallback to deterministic engine
-    let planData = await generateTripPlan(tripData);
+    let planData = await generateTripPlan(tripData, contextPackage, chatHistory);
     let usedFallback = false;
 
     if (!planData) {

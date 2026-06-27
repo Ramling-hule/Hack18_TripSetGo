@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion } from 'framer-motion'
-import { verifyOTP, selectAuthLoading, selectAuthError, clearError } from '@/features/auth/authSlice'
+import { verifyOTP, resendOTP, selectAuthLoading, selectAuthError, clearError, clearSuccess } from '@/features/auth/authSlice'
 import Button from '@/components/common/Button'
 
 export default function VerifyOTP() {
@@ -11,12 +11,22 @@ export default function VerifyOTP() {
   const navigate = useNavigate()
   const loading  = useSelector(selectAuthLoading)
   const error    = useSelector(selectAuthError)
+  const successMsg = useSelector(s => s.auth.successMessage)
   const pendingEmail = useSelector(s => s.auth.pendingEmail)
   const [otp, setOtp] = useState(Array(6).fill(''))
+  const [countdown, setCountdown] = useState(60)
   const refs = useRef([])
 
   useEffect(() => { refs.current[0]?.focus() }, [])
-  useEffect(() => { return () => dispatch(clearError()) }, [dispatch])
+  useEffect(() => { return () => { dispatch(clearError()); dispatch(clearSuccess()) } }, [dispatch])
+  
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(c => c - 1), 1000)
+    }
+    return () => clearTimeout(timer)
+  }, [countdown])
 
   const handleChange = (i, val) => {
     if (!/^\d?$/.test(val)) return
@@ -46,6 +56,14 @@ export default function VerifyOTP() {
     if (!res.error) navigate('/auth/login')
   }
 
+  const handleResend = async () => {
+    if (countdown > 0) return
+    dispatch(clearSuccess())
+    dispatch(clearError())
+    const res = await dispatch(resendOTP({ email: pendingEmail }))
+    if (!res.error) setCountdown(60)
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'var(--gradient-hero)' }}>
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
@@ -59,6 +77,12 @@ export default function VerifyOTP() {
         {error && (
           <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '1.25rem', color: '#f87171', fontSize: '0.875rem' }}>
             {error}
+          </div>
+        )}
+        
+        {successMsg && (
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '1.25rem', color: '#10b981', fontSize: '0.875rem' }}>
+            {successMsg}
           </div>
         )}
 
@@ -89,10 +113,25 @@ export default function VerifyOTP() {
               />
             ))}
           </div>
-          <Button type="submit" loading={loading} size="lg" style={{ width: '100%' }} disabled={otp.join('').length < 6}>
+          <Button type="submit" loading={loading} size="lg" style={{ width: '100%', marginBottom: '1rem' }} disabled={otp.join('').length < 6}>
             Verify OTP
           </Button>
         </form>
+
+        <div style={{ marginTop: '1.5rem', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+          Didn't receive the code?{' '}
+          {countdown > 0 ? (
+            <span style={{ color: 'var(--color-text-primary)' }}>Resend in {countdown}s</span>
+          ) : (
+            <button 
+              onClick={handleResend}
+              disabled={loading}
+              style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+            >
+              Resend Code
+            </button>
+          )}
+        </div>
       </motion.div>
     </div>
   )

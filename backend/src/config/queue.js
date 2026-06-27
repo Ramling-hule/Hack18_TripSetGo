@@ -6,6 +6,9 @@ const redisOptions = {
   enableReadyCheck: false,    // Recommended by BullMQ
 };
 
+const IORedis = require('ioredis');
+let sharedConnection;
+
 const getQueueConnectionOptions = () => {
   const url = process.env.REDIS_URL;
   if (!url) {
@@ -13,13 +16,26 @@ const getQueueConnectionOptions = () => {
     throw new Error('REDIS_URL environment variable is required for BullMQ');
   }
 
-  // Parse connection URL
+  if (!sharedConnection) {
+    sharedConnection = new IORedis(url, {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false
+    });
+    sharedConnection.on('error', (err) => {
+      logger.warn(`⚠️  BullMQ Redis error: ${err.message}`);
+    });
+  }
+
   return {
-    connection: {
-      url,
-      ...redisOptions
-    }
+    connection: sharedConnection
   };
 };
 
-module.exports = { getQueueConnectionOptions };
+const closeQueueConnection = async () => {
+  if (sharedConnection) {
+    await sharedConnection.quit();
+    sharedConnection = null;
+  }
+};
+
+module.exports = { getQueueConnectionOptions, closeQueueConnection };

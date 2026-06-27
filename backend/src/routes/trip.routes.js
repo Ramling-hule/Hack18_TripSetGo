@@ -8,7 +8,7 @@ const { createTripSchema, saveItinerarySchema, itineraryDaySchema, saveDraftSche
 
 const tripCreationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 requests per hour
+  max: 100, // 100 requests per hour (increased for testing)
   message: { success: false, message: 'Too many trip generation requests. Please try again after an hour.' }
 })
 

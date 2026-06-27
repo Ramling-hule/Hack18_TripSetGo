@@ -1,6 +1,6 @@
 // src/pages/Auth/ForgotPassword.jsx
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion } from 'framer-motion'
 import { Mail } from 'lucide-react'
@@ -10,6 +10,7 @@ import Button from '@/components/common/Button'
 
 export default function ForgotPassword() {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const loading  = useSelector(selectAuthLoading)
   const error    = useSelector(selectAuthError)
   const [email, setEmail] = useState('')
@@ -18,7 +19,7 @@ export default function ForgotPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const res = await dispatch(forgotPassword({ email }))
-    if (!res.error) setSent(true)
+    if (!res.error) navigate(`/auth/reset-password?email=${encodeURIComponent(email)}`)
   }
 
   return (

@@ -17,8 +17,15 @@ const auditLogger    = require('../utils/auditLogger')
 
 // Helper functions for MongoDB OTP storage
 const setOTP = async (email, otp) => {
-  // Overwrite existing OTP for this email to prevent spamming
-  await OTP.findOneAndDelete({ email })
+  const existing = await OTP.findOne({ email })
+  if (existing) {
+    // 60-second cooldown to prevent spamming
+    const diff = (Date.now() - existing.createdAt.getTime()) / 1000
+    if (diff < 60) {
+      throw new Error(`Please wait ${Math.ceil(60 - diff)} seconds before requesting a new OTP.`)
+    }
+    await OTP.deleteOne({ _id: existing._id })
+  }
   await OTP.create({ email, otp })
 }
 
@@ -55,6 +62,27 @@ exports.signup = asyncHandler(async (req, res) => {
   logger.info(`New signup: ${email}`)
   await auditLogger.logEvent({ userId: user._id, action: 'SIGNUP', status: 'success', req })
   created(res, { email }, 'Account created. OTP sent to your email.')
+})
+
+// ── Resend OTP ────────────────────────────────────────────────────────────
+
+exports.resendOTP = asyncHandler(async (req, res) => {
+  const { email } = req.body
+  if (!email) return badRequest(res, 'Email is required')
+
+  const user = await User.findOne({ email })
+  if (!user) return badRequest(res, 'User not found')
+  if (user.isEmailVerified) return badRequest(res, 'Email is already verified')
+
+  const otp = String(Math.floor(100000 + Math.random() * 900000))
+  try {
+    await setOTP(email, otp)
+  } catch (err) {
+    return badRequest(res, err.message) // Catch cooldown error
+  }
+  
+  await emailService.sendOTP(email, user.name, otp)
+  success(res, null, 'A new OTP has been sent to your email.')
 })
 
 // ── Verify OTP ────────────────────────────────────────────────────────────
@@ -156,8 +184,20 @@ exports.refresh = asyncHandler(async (req, res) => {
   if (!token) return unauthorized(res, 'No refresh token')
 
   const decoded = verifyRefreshToken(token)
-  const stored  = await RefreshToken.findOne({ token, isRevoked: false })
-  if (!stored || stored.expiresAt < new Date()) return unauthorized(res, 'Refresh token expired or revoked')
+  const stored  = await RefreshToken.findOne({ token })
+  
+  if (!stored) return unauthorized(res, 'Refresh token invalid')
+
+  // Refresh Token Reuse Detection
+  if (stored.isRevoked) {
+    // If a revoked token is used, it's a massive red flag (session hijack / replay).
+    // Revoke all active sessions for this user.
+    await RefreshToken.updateMany({ userId: decoded.userId }, { isRevoked: true })
+    await auditLogger.logEvent({ userId: decoded.userId, action: 'TOKEN_REUSE_DETECTED', status: 'failure', req, details: { token } })
+    return unauthorized(res, 'Token reuse detected. All sessions have been revoked for security.')
+  }
+
+  if (stored.expiresAt < new Date()) return unauthorized(res, 'Refresh token expired')
 
   // Rotate token (revoke old, issue new)
   stored.isRevoked = true
@@ -278,6 +318,7 @@ exports.googleToken = asyncHandler(async (req, res) => {
   } else if (!user.googleId) {
     user.googleId = payload.sub
     user.avatar   = payload.picture || user.avatar
+    user.isEmailVerified = true // Auto-verify email since Google proved ownership
     await user.save()
   }
 
