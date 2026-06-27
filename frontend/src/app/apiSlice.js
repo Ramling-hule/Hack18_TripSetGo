@@ -43,11 +43,13 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions)
 
   if (result.error && result.error.status === 401) {
-    const isRefreshRequest = typeof args === 'string'
-      ? args.includes('/auth/refresh')
-      : args.url && args.url.includes('/auth/refresh')
+    const urlString = typeof args === 'string' ? args : args.url || ''
+    const isAuthRoute = urlString.includes('/auth/refresh') || 
+                        urlString.includes('/auth/login') || 
+                        urlString.includes('/auth/signup') ||
+                        urlString.includes('/auth/google/token')
 
-    if (isRefreshRequest) {
+    if (isAuthRoute) {
       return result
     }
 

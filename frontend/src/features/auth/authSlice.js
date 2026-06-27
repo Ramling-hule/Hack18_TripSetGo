@@ -19,6 +19,14 @@ export const verifyOTP = createAsyncThunk('auth/verifyOTP', async (data, { dispa
   }
 })
 
+export const resendOTP = createAsyncThunk('auth/resendOTP', async (data, { dispatch, rejectWithValue }) => {
+  try {
+    return await dispatch(authApi.endpoints.resendOTP.initiate(data)).unwrap()
+  } catch (err) {
+    return rejectWithValue(err.data?.message || err.message || 'Failed to resend OTP')
+  }
+})
+
 export const login = createAsyncThunk('auth/login', async (data, { dispatch, rejectWithValue }) => {
   try {
     return await dispatch(authApi.endpoints.login.initiate(data)).unwrap()
@@ -129,6 +137,20 @@ const authSlice = createSlice({
         state.successMessage = 'Email verified! Please log in.'
       })
       .addCase(verifyOTP.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = payload
+      })
+
+    // Resend OTP
+      .addCase(resendOTP.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(resendOTP.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.successMessage = payload?.message || 'A new OTP has been sent'
+      })
+      .addCase(resendOTP.rejected, (state, { payload }) => {
         state.loading = false
         state.error = payload
       })

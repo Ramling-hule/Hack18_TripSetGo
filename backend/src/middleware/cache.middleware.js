@@ -45,8 +45,8 @@ const cacheMiddleware = (namespace, ttl) => async (req, res, next) => {
           res.status(200).json(envelope.data)
 
           // Trigger background revalidation
-          const lockKey = `tsg:lock:${key}`
-          const swrService = require('../services/swr.service')
+          const lockKey = `tsg:lock:${key}`;
+          const swrService = require('../services/swr.service');
 
           (async () => {
             const locked = await swrService.acquireLock(lockKey, 15)

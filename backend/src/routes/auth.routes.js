@@ -4,7 +4,7 @@ const rateLimit = require('express-rate-limit')
 const authCtrl = require('../controllers/auth.controller')
 const validate = require('../middleware/validate.middleware')
 const {
-  signupSchema, loginSchema, verifyOtpSchema,
+  signupSchema, resendOtpSchema, loginSchema, verifyOtpSchema,
   forgotPasswordSchema, resetPasswordSchema, googleTokenSchema,
 } = require('../validators/auth.validator')
 
@@ -26,6 +26,7 @@ const otpLimiter = rateLimit({
 const { authenticate } = require('../middleware/auth.middleware')
 
 router.post('/signup',          authLimiter, validate(signupSchema),        authCtrl.signup)
+router.post('/resend-otp',      otpLimiter,  validate(resendOtpSchema),     authCtrl.resendOTP)
 router.post('/verify-otp',      otpLimiter,  validate(verifyOtpSchema),     authCtrl.verifyOTP)
 router.post('/login',           authLimiter, validate(loginSchema),         authCtrl.login)
 router.post('/refresh',         authCtrl.refresh)

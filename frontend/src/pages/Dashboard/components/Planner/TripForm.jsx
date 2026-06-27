@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Sparkles, Navigation, MapPin, Plane, CalendarDays, DollarSign, Users, ChevronRight } from 'lucide-react'
 
 const plannerGlassPanelClass = 'bg-[rgba(26,31,47,0.7)] backdrop-blur-[40px] border border-solid border-[rgba(255,255,255,0.08)] border-t-[rgba(255,255,255,0.12)] shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]'
@@ -6,19 +6,19 @@ const plannerSectionHeaderClass = 'flex items-center gap-2 mb-4 font-bold text-[
 const plannerSectionNumClass = 'flex items-center justify-center w-6 h-6 rounded-md text-[0.7rem] font-bold'
 const plannerInputGroupClass = 'flex flex-col gap-[0.375rem] relative [&_label]:text-[0.75rem] [&_label]:font-semibold [&_label]:text-[var(--color-text-secondary)] [&_label]:ml-1'
 const plannerInputClass = 'w-full bg-[rgba(255,255,255,0.03)] border border-solid border-[rgba(255,255,255,0.08)] rounded-xl px-4 py-3 pl-10 text-[0.875rem] text-[var(--color-text-primary)] transition-all duration-200 outline-none hover:border-[rgba(255,255,255,0.15)] focus:border-[#0EA5E9] focus:bg-[rgba(14,165,233,0.03)] focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)] placeholder:text-[var(--color-text-muted)]'
-const plannerInputIconClass = 'absolute left-3.5 top-[38px] text-[var(--color-text-muted)] pointer-events-none'
+const plannerInputIconClass = 'absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none'
 const plannerChipLabelClass = 'text-[0.75rem] font-semibold text-[var(--color-text-secondary)] mb-2 ml-1'
-const plannerChipClass = (active, isPace) => `px-4 py-2 rounded-xl text-[0.8125rem] font-semibold transition-all duration-200 cursor-pointer border border-solid ${
+const plannerChipClass = (active) => `px-4 py-2 rounded-xl text-[0.8125rem] font-semibold transition-all duration-200 cursor-pointer border border-solid ${
   active
-    ? `bg-gradient-to-r ${isPace ? 'from-[#0EA5E9] to-[#14B8A6]' : 'from-[#8B5CF6] to-[#0EA5E9]'} text-white border-transparent shadow-[0_4px_12px_rgba(14,165,233,0.3)]`
+    ? 'bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white border-transparent shadow-[0_4px_12px_rgba(14,165,233,0.3)]'
     : 'bg-[rgba(255,255,255,0.03)] text-[var(--color-text-secondary)] border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.15)]'
 }`
 const plannerPrefChipClass = (active) => `flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[0.8rem] font-medium transition-all duration-200 cursor-pointer border border-solid ${
   active
     ? 'bg-[rgba(139,92,246,0.15)] text-[#c4b5fd] border-[#8B5CF6] shadow-[0_0_12px_rgba(139,92,246,0.2)]'
-    : 'bg-[rgba(255,255,255,0.02)] text-[var(--color-text-muted)] border-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.15)]'
+    : 'bg-[rgba(255,255,255,0.05)] text-[var(--color-text-secondary)] border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.25)] hover:text-[var(--color-text-primary)]'
 }`
-const plannerGenerateBtnClass = 'w-full mt-4 flex items-center justify-center gap-2 bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white py-4 rounded-xl font-bold text-[0.95rem] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(14,165,233,0.4)] hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:transform-none'
+const plannerGenerateBtnClass = 'mt-6 self-end inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white px-8 py-3.5 rounded-xl font-bold text-[0.95rem] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(14,165,233,0.4)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none'
 
 const GROUP_TYPES = [
   { value: 'solo',   label: 'Solo' },
@@ -46,12 +46,139 @@ const PREFERENCES = [
   { value: 'history',     label: '🏰 History' },
 ]
 
+function CityAutocomplete({ value, onChange, placeholder, icon: Icon }) {
+  const [query, setQuery] = useState(value || '');
+  const [prevValue, setPrevValue] = useState(value);
+  const [suggestions, setSuggestions] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const wrapperRef = useRef(null);
+  const ignoreNextFetch = useRef(false);
+
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setQuery(value || '');
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!query || query.length < 2) {
+      return;
+    }
+    if (ignoreNextFetch.current) {
+      ignoreNextFetch.current = false;
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const token = import.meta.env.VITE_MAPBOX_TOKEN;
+        if (!token) return;
+        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?types=place,locality,neighborhood&access_token=${token}&limit=5`);
+        const data = await res.json();
+        if (data.features) {
+          setSuggestions(data.features);
+          setIsOpen(true);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [query, value]);
+
+  const showSuggestions = isOpen && suggestions.length > 0 && query && query.length >= 2;
+
+  return (
+    <div ref={wrapperRef} style={{ position: 'relative' }}>
+      <Icon size={14} className={plannerInputIconClass} />
+      <input
+        className={plannerInputClass}
+        placeholder={placeholder}
+        required
+        value={query}
+        onChange={(e) => {
+          const val = e.target.value;
+          setQuery(val);
+          onChange(val);
+          if (!val || val.length < 2) {
+             setSuggestions([]);
+             setIsOpen(false);
+          }
+        }}
+        onFocus={() => { if (suggestions.length > 0) setIsOpen(true); }}
+      />
+      {loading && (
+        <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>
+          <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#0EA5E9', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        </div>
+      )}
+      {showSuggestions && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4,
+          background: 'rgba(26,31,47,0.95)', backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, overflow: 'hidden',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+        }}>
+          {suggestions.map((s, i) => {
+            const mainText = s.text;
+            let subText = s.place_name.replace(mainText, '').trim();
+            if (subText.startsWith(',')) subText = subText.substring(1).trim();
+            return (
+              <div
+                key={s.id || i}
+                onClick={() => {
+                  ignoreNextFetch.current = true;
+                  onChange(mainText);
+                  setQuery(mainText);
+                  setIsOpen(false);
+                }}
+                style={{
+                  padding: '10px 16px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', cursor: 'pointer',
+                  borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ fontWeight: 600, color: 'white' }}>{mainText}</div>
+                {subText && <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: 2 }}>{subText}</div>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TripForm({ form, onSubmit, onChange, loading }) {
   const [prefs, setPrefs] = useState(form.preferences || [])
   const togglePref = (p) => {
     const next = prefs.includes(p) ? prefs.filter(x => x !== p) : [...prefs, p]
     setPrefs(next)
     onChange({ preferences: next })
+  }
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (new Date(form.endDate) < new Date(form.startDate)) {
+      window.dispatchEvent(new CustomEvent('toast', { 
+        detail: { type: 'error', message: 'End Date cannot be before Start Date' } 
+      }));
+      return;
+    }
+    onSubmit(e);
   }
 
   return (
@@ -84,7 +211,7 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
         </div>
       </div>
 
-      <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+      <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
 
         {/* Section 01: Route & Timeline */}
         <div>
@@ -93,32 +220,24 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
             <Navigation size={14} style={{ opacity: 0.7 }} />
             <span>Route &amp; Timeline</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem', position: 'relative', zIndex: 10 }}>
             <div className={plannerInputGroupClass}>
               <label>Departure From</label>
-              <div style={{ position: 'relative' }}>
-                <MapPin size={14} className={plannerInputIconClass} />
-                <input
-                  className={plannerInputClass}
-                  placeholder="e.g. Mumbai"
-                  required
-                  value={form.source}
-                  onChange={e => onChange({ source: e.target.value })}
-                />
-              </div>
+              <CityAutocomplete
+                value={form.source}
+                onChange={(val) => onChange({ source: val })}
+                placeholder="e.g. Mumbai"
+                icon={MapPin}
+              />
             </div>
             <div className={plannerInputGroupClass}>
               <label>Destination To</label>
-              <div style={{ position: 'relative' }}>
-                <Plane size={14} className={plannerInputIconClass} />
-                <input
-                  className={plannerInputClass}
-                  placeholder="e.g. Goa"
-                  required
-                  value={form.destination}
-                  onChange={e => onChange({ destination: e.target.value })}
-                />
-              </div>
+              <CityAutocomplete
+                value={form.destination}
+                onChange={(val) => onChange({ destination: val })}
+                placeholder="e.g. Goa"
+                icon={Plane}
+              />
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -143,6 +262,7 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
                   type="date"
                   className={plannerInputClass}
                   required
+                  min={form.startDate}
                   value={form.endDate}
                   onChange={e => onChange({ endDate: e.target.value })}
                 />
@@ -200,7 +320,7 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
                     key={g.value}
                     type="button"
                     onClick={() => onChange({ groupType: g.value })}
-                    className={plannerChipClass(active, false)}
+                    className={plannerChipClass(active)}
                   >
                     {g.label}
                   </button>
@@ -219,7 +339,7 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
                     key={p.value}
                     type="button"
                     onClick={() => onChange({ pace: p.value })}
-                    className={plannerChipClass(active, true)}
+                    className={plannerChipClass(active)}
                   >
                     {p.label}
                   </button>
@@ -272,7 +392,7 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
             <Sparkles size={18} />
           )}
           {loading ? 'Building Your Itinerary...' : 'Generate AI Itinerary'}
-          {!loading && <ChevronRight size={16} style={{ marginLeft: 'auto' }} />}
+          {!loading && <ChevronRight size={18} />}
         </button>
       </form>
     </div>

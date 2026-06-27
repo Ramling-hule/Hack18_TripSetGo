@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useDispatch } from 'react-redux'
 import { Sparkles, Plus, Trash2, Send } from 'lucide-react'
+import { setCopilotConversationId } from '../../../../features/planner/plannerSlice'
 import api from '../../../../services/api'
 
 const plannerGlassPanelClass = 'bg-[rgba(26,31,47,0.7)] backdrop-blur-[40px] border border-solid border-[rgba(255,255,255,0.08)] border-t-[rgba(255,255,255,0.12)] shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]'
@@ -11,6 +13,7 @@ export default function TripAssistant() {
   const [input, setInput]     = useState('')
   const [streaming, setStreaming] = useState(false)
   const scrollRef = useRef(null)
+  const dispatch = useDispatch()
 
   const API_BASE = import.meta.env.VITE_API_URL
     ? import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '')
@@ -20,20 +23,26 @@ export default function TripAssistant() {
     try { const res = await api.get('/api/v1/copilot/conversations'); setConversations(res.data.data || []) } catch { /* ignore */ }
   }
 
-  useEffect(() => { loadConversations() }, [])
+  useEffect(() => {
+    const fetchConvs = async () => {
+      try { const res = await api.get('/api/v1/copilot/conversations'); setConversations(res.data.data || []) } catch { /* ignore */ }
+    }
+    fetchConvs()
+  }, [])
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages])
 
   const openConversation = async (id) => {
     setConvId(id)
+    dispatch(setCopilotConversationId(id))
     try {
       const res = await api.get(`/api/v1/copilot/conversations/${id}/messages`)
       setMessages((res.data.data.messages || []).map((m) => ({ role: m.role || 'user', text: m.text })))
     } catch { setMessages([]) }
   }
 
-  const newChat = () => { setConvId(null); setMessages([]) }
+  const newChat = () => { setConvId(null); dispatch(setCopilotConversationId(null)); setMessages([]) }
 
   const deleteConv = async (id, e) => {
     e.stopPropagation()
@@ -91,7 +100,10 @@ export default function TripAssistant() {
           }
         }
       }
-      if (newConvId && newConvId !== convId) setConvId(newConvId)
+      if (newConvId && newConvId !== convId) {
+        setConvId(newConvId)
+        dispatch(setCopilotConversationId(newConvId))
+      }
       loadConversations()
     } catch {
       setMessages(prev => {
@@ -306,7 +318,7 @@ export default function TripAssistant() {
       }}>
         <form
           onSubmit={e => { e.preventDefault(); send() }}
-          style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
+          style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', margin: 0 }}
         >
           <input
             placeholder="Ask assistant..."
@@ -315,10 +327,12 @@ export default function TripAssistant() {
             disabled={streaming}
             style={{
               flex: 1,
+              height: 38,
+              boxSizing: 'border-box',
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 99,
-              padding: '0.5rem 1rem',
+              padding: '0 1rem',
               color: 'var(--color-text-primary)',
               fontSize: '0.84rem',
               outline: 'none',
@@ -331,7 +345,7 @@ export default function TripAssistant() {
             type="submit"
             disabled={streaming || !input.trim()}
             style={{
-              width: 36, height: 36, borderRadius: '50%',
+              width: 38, height: 38, borderRadius: '50%',
               background: 'linear-gradient(135deg, #0EA5E9, #14B8A6)',
               border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
