@@ -56,7 +56,7 @@ function AdminRoute({ children }) {
 const Wrap = ({ element }) => <Suspense fallback={<Loader fullScreen text="Loading..." />}>{element}</Suspense>
 
 export const router = createBrowserRouter([
-  { path: '/', element: <Wrap element={<Home />} /> },
+  { path: '/', element: <Wrap element={<PublicOnly><Home /></PublicOnly>} /> },
   {
     path: '/auth',
     children: [

@@ -1,6 +1,9 @@
 // src/components/layout/Navbar.jsx
 // Aurora Design System — Top navigation bar
-// Glass surface, Bricolage logo, Dropdown for user menu.
+// Variants:
+//   'dashboard' (default) — fixed glass surface, always visible. Used by DashboardLayout.
+//   'landing'             — transparent at scroll 0, transitions to glass past 80px.
+//                           CTA label changes to 'Start Planning Free'.
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Menu, User, LogOut } from 'lucide-react'
@@ -8,12 +11,16 @@ import Avatar from '@/components/common/Avatar'
 import IconButton from '@/components/common/IconButton'
 import Dropdown from '@/components/common/Dropdown'
 import { selectUser, selectIsAuthenticated, logout } from '@/features/auth/authSlice'
+import { useScrollPosition } from '@/hooks/useScrollPosition'
 
-export default function Navbar({ onMenuClick }) {
+export default function Navbar({ onMenuClick, variant = 'dashboard' }) {
   const dispatch  = useDispatch()
   const navigate  = useNavigate()
   const user      = useSelector(selectUser)
   const isAuth    = useSelector(selectIsAuthenticated)
+  const isLanding = variant === 'landing'
+
+  const { isPastThreshold } = useScrollPosition({ enabled: isLanding, threshold: 80 })
 
   const handleLogout = async () => {
     await dispatch(logout())
@@ -35,6 +42,22 @@ export default function Navbar({ onMenuClick }) {
     },
   ]
 
+  const navBackground = isLanding
+    ? isPastThreshold
+      ? 'rgba(14, 17, 23, 0.92)'
+      : 'transparent'
+    : 'rgba(14, 17, 23, 0.88)'
+
+  const navBorderColor = isLanding
+    ? isPastThreshold
+      ? 'var(--color-border-subtle)'
+      : 'transparent'
+    : 'var(--color-border-subtle)'
+
+  const navBackdrop = isLanding
+    ? isPastThreshold ? 'blur(16px)' : 'none'
+    : 'blur(16px)'
+
   return (
     <nav
       style={{
@@ -48,13 +71,13 @@ export default function Navbar({ onMenuClick }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 1.5rem',
-        background: 'rgba(14, 17, 23, 0.88)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--color-border-subtle)',
+        background: navBackground,
+        backdropFilter: navBackdrop,
+        WebkitBackdropFilter: navBackdrop,
+        borderBottom: `1px solid ${navBorderColor}`,
+        transition: 'background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease',
       }}
     >
-      {/* Hamburger — mobile only */}
       {onMenuClick && (
         <div className="md:hidden mr-1">
           <IconButton
@@ -67,7 +90,6 @@ export default function Navbar({ onMenuClick }) {
         </div>
       )}
 
-      {/* Logo */}
       <Link to="/" className="flex items-center gap-2 no-underline">
         <img src="/favicon.svg" className="w-8 h-8 object-contain" alt="TripSetGo Logo" />
         <span
@@ -84,7 +106,6 @@ export default function Navbar({ onMenuClick }) {
         </span>
       </Link>
 
-      {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {isAuth ? (
           <Dropdown
@@ -134,7 +155,7 @@ export default function Navbar({ onMenuClick }) {
               to="/auth/signup"
               className="inline-flex items-center justify-center px-4 py-2 rounded-[var(--radius-md)] text-[var(--font-size-body-sm)] font-semibold text-white bg-[var(--color-indigo-700)] shadow-[var(--shadow-primary)] cursor-pointer transition-all duration-[var(--duration-fast)] hover:bg-[var(--color-indigo-600)] no-underline"
             >
-              Get Started
+              {isLanding ? 'Start Planning Free' : 'Get Started'}
             </Link>
           </>
         )}
