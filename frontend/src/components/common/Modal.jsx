@@ -1,11 +1,15 @@
 // src/components/common/Modal.jsx
+// Aurora Design System — Modal dialog
+// surface.raised background, scrim at rgba(0,0,0,0.72), shadow.lg
+// Spring animation via Framer Motion. Escape to close.
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import IconButton from './IconButton'
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md', hideClose = false }) {
-  // Close on Escape key
+  // Close on Escape
   useEffect(() => {
     if (!isOpen) return
     const handler = (e) => { if (e.key === 'Escape') onClose?.() }
@@ -26,7 +30,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', h
     <AnimatePresence>
       {isOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, overflowY: 'auto' }}>
-          {/* Backdrop Background */}
+          {/* Backdrop / Scrim */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -37,12 +41,12 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', h
               position: 'fixed',
               inset: 0,
               zIndex: -1,
-              background: 'rgba(0,0,0,0.7)',
-              backdropFilter: 'blur(6px)',
+              background: 'var(--color-surface-scrim)',
+              backdropFilter: 'blur(4px)',
             }}
           />
 
-          {/* Centering Scroll Wrapper */}
+          {/* Centering wrapper */}
           <div
             style={{
               display: 'flex',
@@ -55,36 +59,58 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', h
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1,    opacity: 1, y: 0 }}
-              exit={{ scale: 0.95,    opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="bg-bg-glass backdrop-blur-[20px] border border-border shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]"
               role="dialog"
               aria-modal="true"
-              aria-labelledby={title ? "modal-title" : undefined}
+              aria-labelledby={title ? 'modal-title' : undefined}
               style={{
                 width: '100%',
                 maxWidth: maxWidths[size] || 560,
                 borderRadius: 'var(--radius-xl)',
                 padding: '2rem',
                 position: 'relative',
+                background: 'var(--color-surface-raised)',
+                border: '1px solid var(--color-border-default)',
+                boxShadow: 'var(--shadow-lg)',
               }}
             >
+              {/* Header */}
               {(title || !hideClose) && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                  {title && <h2 id="modal-title" style={{ fontSize: '1.25rem', fontWeight: 700 }}>{title}</h2>}
-                  {!hideClose && (
-                    <button
-                      onClick={onClose}
-                      className="inline-flex items-center justify-center gap-2 font-sans font-semibold text-[0.8125rem] px-[0.875rem] py-[0.375rem] rounded-xl cursor-pointer transition-all duration-250 ease-out whitespace-nowrap text-decoration-none relative overflow-hidden bg-transparent text-text-secondary hover:bg-[rgba(255,255,255,0.05)] hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ marginLeft: 'auto', borderRadius: '50%', padding: '0.375rem' }}
-                      aria-label="Close"
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '1.5rem',
+                }}>
+                  {title && (
+                    <h2
+                      id="modal-title"
+                      style={{
+                        fontFamily: 'var(--font-family-display)',
+                        fontSize: 'var(--font-size-h3)',
+                        fontWeight: 700,
+                        color: 'var(--color-text-primary)',
+                        margin: 0,
+                      }}
                     >
-                      <X size={18} />
-                    </button>
+                      {title}
+                    </h2>
+                  )}
+                  {!hideClose && (
+                    <IconButton
+                      icon={<X size={18} />}
+                      variant="ghost"
+                      size="sm"
+                      label="Close"
+                      onClick={onClose}
+                      className="ml-auto"
+                    />
                   )}
                 </div>
               )}
+
               {children}
             </motion.div>
           </div>

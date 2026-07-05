@@ -1,4 +1,7 @@
 // src/components/layout/Sidebar.jsx
+// Aurora Design System — Dashboard sidebar navigation
+// Active: indigo.dim bg + indigo.400 text + 3px left border
+// Per Aurora Section 9: Navigation Item (Sidebar)
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { selectUser, logout } from '@/features/auth/authSlice'
@@ -30,6 +33,28 @@ const adminNavItems = [
   { icon: <Terminal size={18} />,        label: 'Audit Logs',   to: '/dashboard/admin/reports' },
 ]
 
+function NavItem({ icon, label, to, end = false }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        [
+          'shrink-0 flex items-center gap-3 px-3.5 py-2.5 rounded-[var(--radius-md)] no-underline',
+          'text-[var(--font-size-body-sm)] border-l-3 border-transparent',
+          'transition-all duration-[var(--duration-fast)] ease-[var(--easing-standard)]',
+          isActive
+            ? 'font-semibold text-[var(--color-indigo-400)] bg-[var(--color-indigo-dim)] border-l-[var(--color-indigo-400)]'
+            : 'font-normal text-[var(--color-text-secondary)] bg-transparent hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]',
+        ].join(' ')
+      }
+    >
+      <span className={`shrink-0 inline-flex`}>{icon}</span>
+      {label}
+    </NavLink>
+  )
+}
+
 export default function Sidebar({ isOpen = false }) {
   const user = useSelector(selectUser)
   const dispatch = useDispatch()
@@ -43,58 +68,53 @@ export default function Sidebar({ isOpen = false }) {
 
   return (
     <aside
-      className={`w-[240px] min-w-[240px] flex-shrink-0 fixed top-16 left-0 bottom-0 overflow-y-auto overflow-x-hidden bg-bg-secondary border-r border-solid border-border p-[1.25rem_0.75rem] flex flex-col gap-1 transition-transform duration-300 ease-out z-50 -translate-x-full md:translate-x-0 ${isOpen ? 'translate-x-0 shadow-[4px_0_24px_rgba(0,0,0,0.5)]' : ''}`}
+      className={`
+        w-[var(--layout-sidebar-width)] min-w-[var(--layout-sidebar-width)] flex-shrink-0
+        fixed top-[var(--layout-navbar-height)] left-0 bottom-0
+        overflow-y-auto overflow-x-hidden
+        bg-[var(--color-surface-default)]
+        border-r border-solid border-[var(--color-border-subtle)]
+        p-[1rem_0.75rem]
+        flex flex-col gap-0.5
+        transition-transform duration-[var(--duration-slow)] ease-[var(--easing-standard)]
+        z-50
+        -translate-x-full md:translate-x-0
+        ${isOpen ? 'translate-x-0 shadow-[var(--shadow-lg)]' : ''}
+      `}
     >
-      <p className="shrink-0 text-[0.6875rem] font-bold tracking-[0.08em] uppercase px-3.5 mb-2 mt-1" style={{ color: 'var(--color-text-muted)' }}>
+      {/* Nav section label */}
+      <p className="text-section-label shrink-0 px-3.5 mb-2 mt-1">
         Navigation
       </p>
+
       {navItems.map(({ icon, label, to }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={to === '/dashboard'}
-          className={({ isActive }) =>
-            `shrink-0 flex items-center gap-3 px-3.5 py-2.5 rounded-xl no-underline text-sm border border-transparent transition-all duration-150 relative ` +
-            (isActive
-              ? 'font-semibold text-text-primary bg-linear-to-r from-[rgba(129,140,248,0.15)] to-transparent border-[rgba(129,140,248,0.3)] ' +
-                "after:content-[''] after:absolute after:left-0 after:top-[15%] after:h-[70%] after:w-1 after:bg-gradient-primary after:rounded-r after:shadow-[0_0_10px_rgba(129,140,248,0.8)]"
-              : 'font-normal text-text-secondary bg-transparent hover:bg-[rgba(255,255,255,0.05)] hover:text-text-primary hover:border-[rgba(99,102,241,0.1)]')
-          }
-        >
-          <span className="shrink-0 inline-flex">{icon}</span>
-          {label}
-        </NavLink>
+        <NavItem key={to} icon={icon} label={label} to={to} end={to === '/dashboard'} />
       ))}
 
+      {/* Admin section */}
       {isAdmin && (
         <>
-          <p className="shrink-0 text-[0.6875rem] font-bold tracking-[0.08em] uppercase px-3.5 mt-6 mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-section-label shrink-0 px-3.5 mt-6 mb-2">
             Admin Console
           </p>
           {adminNavItems.map(({ icon, label, to }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/dashboard/admin'}
-              className={({ isActive }) =>
-                `shrink-0 flex items-center gap-3 px-3.5 py-2.5 rounded-xl no-underline text-sm border border-transparent transition-all duration-150 relative ` +
-                (isActive
-                  ? 'font-semibold text-text-primary bg-linear-to-r from-[rgba(129,140,248,0.15)] to-transparent border-[rgba(129,140,248,0.3)] ' +
-                    "after:content-[''] after:absolute after:left-0 after:top-[15%] after:h-[70%] after:w-1 after:bg-gradient-primary after:rounded-r after:shadow-[0_0_10px_rgba(129,140,248,0.8)]"
-                  : 'font-normal text-text-secondary bg-transparent hover:bg-[rgba(255,255,255,0.05)] hover:text-text-primary hover:border-[rgba(99,102,241,0.1)]')
-              }
-            >
-              <span className="shrink-0 inline-flex">{icon}</span>
-              {label}
-            </NavLink>
+            <NavItem key={to} icon={icon} label={label} to={to} end={to === '/dashboard/admin'} />
           ))}
         </>
       )}
 
-      {/* Logout Action Button at the bottom of sidebar */}
+      {/* Logout */}
       <button
         onClick={handleLogout}
-        className="shrink-0 flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm border border-transparent transition-all duration-150 relative font-medium text-accent-red bg-transparent cursor-pointer w-full mt-auto hover:bg-red-500/8 hover:border-red-500/15"
+        className={`
+          shrink-0 flex items-center gap-3 px-3.5 py-2.5
+          rounded-[var(--radius-md)]
+          text-[var(--font-size-body-sm)] font-medium
+          text-[var(--color-rose-500)]
+          bg-transparent border-none cursor-pointer w-full mt-auto
+          transition-all duration-[var(--duration-fast)] ease-[var(--easing-standard)]
+          hover:bg-[var(--color-rose-dim)]
+        `}
       >
         <span className="inline-flex shrink-0"><LogOut size={18} /></span>
         Logout

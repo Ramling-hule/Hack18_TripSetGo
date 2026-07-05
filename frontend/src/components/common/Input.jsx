@@ -1,40 +1,96 @@
 // src/components/common/Input.jsx
+// Aurora Design System — Text input with full state system
+// States: default → hover → focus → error → success → disabled
+// Per Aurora Section 9 Interactive Color Behavior: Input Field
 import { forwardRef } from 'react'
 
 const Input = forwardRef(function Input(
-  { label, error, helperText, icon, iconRight, type = 'text', className = '', id, required, ...props },
+  { label, error, success, helperText, icon, iconRight, type = 'text', className = '', id, required, disabled, ...props },
   ref
 ) {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
+
+  // Determine border/ring state classes
+  const stateClasses = error
+    ? 'border-[var(--color-border-error)] focus:border-[var(--color-border-error)] focus:shadow-[0_0_0_3px_var(--color-rose-dim)]'
+    : success
+      ? 'border-[var(--color-border-success)] focus:border-[var(--color-border-success)] focus:shadow-[0_0_0_3px_var(--color-emerald-dim)]'
+      : 'border-[var(--color-border-default)] hover:border-[var(--color-border-interactive)] focus:border-[var(--color-border-focus)] focus:shadow-[0_0_0_3px_var(--color-indigo-dim)]'
+
   return (
-    <div className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', width: '100%' }}>
+    <div className="flex flex-col gap-1.5 w-full">
       {label && (
-        <label htmlFor={inputId} style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-text-secondary)' }}>
-          {label}{required && <span style={{ color: 'var(--color-accent-red)', marginLeft: 2 }}>*</span>}
+        <label
+          htmlFor={inputId}
+          className="text-[var(--font-size-body-sm)] font-medium text-[var(--color-text-secondary)] leading-[var(--line-height-caption)]"
+        >
+          {label}
+          {required && <span className="text-[var(--color-rose-500)] ml-0.5">*</span>}
         </label>
       )}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+
+      <div className="relative flex items-center">
         {icon && (
-          <span style={{ position: 'absolute', left: '0.75rem', color: 'var(--color-text-muted)', display: 'flex', pointerEvents: 'none' }}>
+          <span
+            className="absolute left-3 text-[var(--color-text-muted)] inline-flex pointer-events-none"
+            aria-hidden="true"
+          >
             {icon}
           </span>
         )}
+
         <input
           ref={ref}
           id={inputId}
           type={type}
-          className={`w-full bg-surface border border-border rounded-xl text-text-primary font-sans text-[0.9375rem] px-4 py-3 outline-none transition-all duration-150 ease-in-out placeholder:text-text-muted focus:border-primary focus:shadow-[0_0_0_3px_rgba(14,165,233,0.2)] disabled:opacity-50 disabled:cursor-not-allowed ${error ? '!border-accent-red' : ''} ${className}`}
-          style={{ paddingLeft: icon ? '2.5rem' : undefined, paddingRight: iconRight ? '2.5rem' : undefined }}
+          disabled={disabled}
+          className={`
+            w-full
+            bg-[var(--color-surface-raised)]
+            border border-solid ${stateClasses}
+            rounded-[var(--radius-sm)]
+            text-[var(--color-text-primary)]
+            font-[var(--font-family-body)]
+            text-[var(--font-size-body)]
+            leading-[var(--line-height-body)]
+            px-4 py-2.5
+            outline-none
+            transition-all duration-[var(--duration-fast)] ease-[var(--easing-standard)]
+            placeholder:text-[var(--color-text-muted)]
+            focus:bg-[var(--color-surface-default)]
+            disabled:opacity-50 disabled:cursor-not-allowed
+            ${className}
+          `}
+          style={{
+            paddingLeft: icon ? '2.5rem' : undefined,
+            paddingRight: iconRight ? '2.5rem' : undefined,
+          }}
           {...props}
         />
+
         {iconRight && (
-          <span style={{ position: 'absolute', right: '0.75rem', color: 'var(--color-text-muted)', display: 'flex' }}>
+          <span className="absolute right-3 text-[var(--color-text-muted)] inline-flex">
             {iconRight}
           </span>
         )}
       </div>
-      {error     && <span style={{ fontSize: '0.8125rem', color: 'var(--color-accent-red)' }}>{error}</span>}
-      {helperText && !error && <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>{helperText}</span>}
+
+      {/* Helper / Error / Success text */}
+      {error && (
+        <span className="text-[0.8125rem] text-[var(--color-rose-500)] leading-[var(--line-height-caption)]">
+          {error}
+        </span>
+      )}
+      {success && !error && (
+        <span className="text-[0.8125rem] text-[var(--color-emerald-500)] leading-[var(--line-height-caption)]">
+          {success}
+        </span>
+      )}
+      {helperText && !error && !success && (
+        <span className="text-[0.8125rem] text-[var(--color-text-muted)] leading-[var(--line-height-caption)]">
+          {helperText}
+        </span>
+      )}
     </div>
   )
 })

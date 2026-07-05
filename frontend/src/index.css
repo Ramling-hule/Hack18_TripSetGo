@@ -1,148 +1,486 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* ═══════════════════════════════════════════════════════════════════════════
+   TripSetGo — Aurora Design Foundation
+   Identity: Aurora · Deep Indigo · Sky Blue · Emerald · Slate
+   Document: Derived from AURORA_VISUAL_GUIDELINES.md + DESIGN_SYSTEM.md
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Typography: Google Fonts ────────────────────────────────────────────── */
+/* Bricolage Grotesque: Display / headings (weights 400–800)                 */
+/* Inter: Body / UI text (weights 300–900)                                   */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ── Tailwind CSS v4 ─────────────────────────────────────────────────────── */
 @import "tailwindcss";
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 1 — DESIGN TOKENS (@theme)
+   All Tailwind utilities (bg-*, text-*, border-*, shadow-*, etc.)
+   derive their values from these tokens.
+   ═══════════════════════════════════════════════════════════════════════════ */
 @theme {
-  --color-primary: #0EA5E9;
-  --color-secondary: #14B8A6;
-  --color-accent: #8B5CF6;
-  --color-bg-primary: #081122;
-  --color-bg-secondary: #0d1525;
-  --color-bg-card: #111827;
-  --color-text-primary: #F8FAFC;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #64748b;
-  --color-border: rgba(14, 165, 233, 0.15);
-  --color-border-hover: rgba(14, 165, 233, 0.4);
 
-  /* Tailwind CSS v4 Theme Overrides/Extensions */
-  --color-bg-glass: rgba(17, 24, 39, 0.75);
-  --color-accent-primary: #0EA5E9;
-  --color-accent-secondary: #14B8A6;
-  --color-accent-tertiary: #8B5CF6;
-  --color-accent-green: #14B8A6;
-  --color-accent-amber: #fbbf24;
-  --color-accent-red: #ef4444;
+  /* ── 1.1  PRIMARY — Deep Indigo ────────────────────────────────────────── */
+  --color-indigo-950: #1E2952;
+  --color-indigo-900: #2C3C7A;
+  --color-indigo-800: #344690;
+  --color-indigo-700: #3D52A0;
+  --color-indigo-600: #4F64B8;
+  --color-indigo-500: #6277CC;
+  --color-indigo-400: #8A97DD;
+  --color-indigo-300: #A8B3E8;
+  --color-indigo-200: #C8D0F2;
+  --color-indigo-100: #E4E7FA;
+  --color-indigo-50:  #F0F2FC;
+  --color-indigo-dim: rgba(61, 82, 160, 0.12);
+  --color-indigo-glow: rgba(61, 82, 160, 0.25);
 
-  --background-image-gradient-primary: linear-gradient(135deg, #0EA5E9, #14B8A6, #8B5CF6);
-  --background-image-gradient-secondary: linear-gradient(135deg, #14B8A6, #0EA5E9);
-  --background-image-gradient-hero: linear-gradient(180deg, #081122 0%, color-mix(in srgb, #081122 85%, #8B5CF6 15%) 50%, #081122 100%);
+  /* ── 1.2  SECONDARY — Sky Blue ─────────────────────────────────────────── */
+  --color-sky-900: #1A3A5C;
+  --color-sky-800: #1F4D7A;
+  --color-sky-700: #286499;
+  --color-sky-600: #3A7DB5;
+  --color-sky-500: #5195C9;
+  --color-sky-400: #6BA3D6;
+  --color-sky-300: #90BCE4;
+  --color-sky-200: #B8D6EF;
+  --color-sky-100: #DAE9F7;
+  --color-sky-50:  #EFF6FC;
+  --color-sky-dim: rgba(107, 163, 214, 0.12);
 
-  --shadow-glow: 0 0 40px rgba(14, 165, 233, 0.25);
-  --shadow-glow-strong: 0 0 60px rgba(14, 165, 233, 0.4);
-  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-btn: 0 4px 14px 0 rgba(14, 165, 233, 0.3);
+  /* ── 1.3  ACCENT — Emerald ─────────────────────────────────────────────── */
+  --color-emerald-900: #1A4A3C;
+  --color-emerald-800: #1E6050;
+  --color-emerald-700: #248068;
+  --color-emerald-600: #2A9E80;
+  --color-emerald-500: #2DB58E;
+  --color-emerald-400: #46C9A4;
+  --color-emerald-300: #70D9BF;
+  --color-emerald-200: #9FE8D6;
+  --color-emerald-100: #CBF3EB;
+  --color-emerald-50:  #E8FAF6;
+  --color-emerald-dim: rgba(45, 181, 142, 0.12);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  /* ── 1.4  STATUS — Amber / Rose / Violet ───────────────────────────────── */
+  --color-amber-700:  #B45309;
+  --color-amber-600:  #D97706;
+  --color-amber-500:  #F59E0B;
+  --color-amber-400:  #FBBF24;
+  --color-amber-dim:  rgba(245, 158, 11, 0.12);
 
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --color-rose-700:   #BE123C;
+  --color-rose-500:   #F43F5E;
+  --color-rose-400:   #FB7185;
+  --color-rose-dim:   rgba(244, 63, 94, 0.12);
 
-  --animate-shimmer: shimmer 1.5s infinite;
-  --animate-fadeIn: fadeIn 0.4s ease forwards;
-  --animate-slideInLeft: slideInLeft 0.4s ease forwards;
-  --animate-slideInRight: slideInRight 0.4s ease forwards;
-  --animate-pulse-slow: pulse 2s infinite;
-  --animate-float: float 3s ease-in-out infinite;
-  --animate-glow: glow 2s ease-in-out infinite;
+  --color-violet-500: #9B7DD4;
+  --color-violet-dim: rgba(155, 125, 212, 0.12);
+
+
+  /* ── 1.5  DARK MODE SURFACES ───────────────────────────────────────────── */
+  /* Active by default (app launches in dark mode)                            */
+  --color-surface-base:     #0E1117;
+  --color-surface-default:  #161D27;
+  --color-surface-raised:   #1F2A38;
+  --color-surface-overlay:  #283649;
+  --color-surface-scrim:    rgba(0, 0, 0, 0.72);
+  --color-surface-glass:    rgba(22, 29, 39, 0.85);
+  --color-surface-hover:    rgba(255, 255, 255, 0.03);
+  --color-surface-selected: var(--color-indigo-dim);
+  --color-surface-admin:    rgba(244, 63, 94, 0.08);
+
+  /* ── 1.6  DARK MODE BORDERS ────────────────────────────────────────────── */
+  --color-border-subtle:      rgba(255, 255, 255, 0.06);
+  --color-border-default:     rgba(255, 255, 255, 0.10);
+  --color-border-interactive: rgba(255, 255, 255, 0.18);
+  --color-border-focus:       #8A97DD;  /* indigo.400 in dark mode */
+  --color-border-error:       #F43F5E;
+  --color-border-success:     #2DB58E;
+
+  /* ── 1.7  DARK MODE TYPOGRAPHY ─────────────────────────────────────────── */
+  --color-text-primary:   #E8EDF5;
+  --color-text-secondary: #96A6B8;
+  --color-text-muted:     #5E7080;
+  --color-text-disabled:  rgba(232, 237, 245, 0.35);
+  --color-text-inverse:   #FFFFFF;
+  --color-text-link:      #8A97DD;  /* indigo.400 in dark mode */
+  --color-text-link-hover:#A8B3E8;  /* indigo.300 */
+
+
+  /* ── 1.8  BACKWARD COMPATIBILITY ALIASES ───────────────────────────────── */
+  /* These map old token names used across existing JSX to the new Aurora     */
+  /* palette. They allow existing Tailwind utility classes to resolve without */
+  /* modifying every component file. Remove these once page redesigns land.  */
+  --color-primary:          #3D52A0;     /* indigo.700 (was #0EA5E9 cyan)    */
+  --color-secondary:        #2DB58E;     /* emerald.500 (was #14B8A6 teal)   */
+  --color-accent:           #6BA3D6;     /* sky.400 (was #8B5CF6 violet)     */
+
+  --color-bg-primary:       #0E1117;     /* surface.base (was #081122)       */
+  --color-bg-secondary:     #161D27;     /* surface.default (was #0d1525)    */
+  --color-bg-card:          #1F2A38;     /* surface.raised (was #111827)     */
+  --color-bg-glass:         rgba(22, 29, 39, 0.85);
+
+  --color-border:           rgba(255, 255, 255, 0.10);
+  --color-border-hover:     rgba(255, 255, 255, 0.18);
+
+  --color-accent-primary:   #3D52A0;     /* indigo.700 */
+  --color-accent-secondary: #2DB58E;     /* emerald.500 */
+  --color-accent-tertiary:  #6BA3D6;     /* sky.400 */
+  --color-accent-green:     #2DB58E;     /* emerald.500 */
+  --color-accent-amber:     #F59E0B;     /* amber.500 */
+  --color-accent-red:       #F43F5E;     /* rose.500 (was #ef4444) */
+
+
+  /* ── 1.9  GRADIENTS ────────────────────────────────────────────────────── */
+  /* The official Aurora gradient: Deep Indigo → Sky Blue at 135°             */
+  --background-image-gradient-primary:   linear-gradient(135deg, #3D52A0, #6277CC, #6BA3D6);
+  --background-image-gradient-secondary: linear-gradient(135deg, #2DB58E, #3D52A0);
+  --background-image-gradient-hero:      linear-gradient(180deg, #0E1117 0%, color-mix(in srgb, #0E1117 85%, #3D52A0 15%) 50%, #0E1117 100%);
+
+
+  /* ── 1.10  CHART PALETTE ───────────────────────────────────────────────── */
+  --color-chart-s1: #3D52A0;  /* indigo.700 — Transport */
+  --color-chart-s2: #6BA3D6;  /* sky.400    — Hotels    */
+  --color-chart-s3: #2DB58E;  /* emerald.500 — Food     */
+  --color-chart-s4: #F59E0B;  /* amber.500 — Entertainment */
+  --color-chart-s5: #9B7DD4;  /* violet    — Misc       */
+  --color-chart-s6: #B8D6EF;  /* sky.200   — Other      */
+
+
+  /* ── 1.11  EXPENSE CATEGORY COLORS ─────────────────────────────────────── */
+  --color-expense-accommodation:     rgba(107, 163, 214, 0.15);
+  --color-expense-accommodation-fg:  #5195C9;
+  --color-expense-food:              rgba(45, 181, 142, 0.15);
+  --color-expense-food-fg:           #2A9E80;
+  --color-expense-transport:         rgba(61, 82, 160, 0.15);
+  --color-expense-transport-fg:      #4F64B8;
+  --color-expense-entertainment:     rgba(155, 125, 212, 0.15);
+  --color-expense-entertainment-fg:  #9B7DD4;
+  --color-expense-misc:              rgba(136, 150, 166, 0.15);
+  --color-expense-misc-fg:           #5E7080;
+
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SECTION 2 — SHADOWS
+     Aurora shadow system: restrained, functional, dark-mode-tuned.
+     ═══════════════════════════════════════════════════════════════════════ */
+  --shadow-xs:           0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-sm:           0 1px 3px rgba(0, 0, 0, 0.30), 0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-md:           0 4px 16px rgba(0, 0, 0, 0.40);
+  --shadow-lg:           0 24px 64px rgba(0, 0, 0, 0.60);
+  --shadow-primary:      0 0 24px rgba(61, 82, 160, 0.20);
+  --shadow-inset:        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* Backward compatibility aliases */
+  --shadow-glow:         0 0 24px rgba(61, 82, 160, 0.20);
+  --shadow-glow-strong:  0 0 40px rgba(61, 82, 160, 0.35);
+  --shadow-card:         0 4px 16px rgba(0, 0, 0, 0.40);
+  --shadow-btn:          0 0 24px rgba(61, 82, 160, 0.20);
+
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SECTION 3 — RADIUS
+     ═══════════════════════════════════════════════════════════════════════ */
+  --radius-xs:   4px;
+  --radius-sm:   8px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SECTION 4 — SPACING
+     Base unit: 4px. Scale follows DESIGN_SYSTEM.md.
+     ═══════════════════════════════════════════════════════════════════════ */
+  --spacing-1:  4px;
+  --spacing-2:  8px;
+  --spacing-3:  12px;
+  --spacing-4:  16px;
+  --spacing-5:  20px;
+  --spacing-6:  24px;
+  --spacing-8:  32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SECTION 5 — TYPOGRAPHY
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* Font Families */
+  --font-family-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --font-family-body:    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Font Sizes */
+  --font-size-display:  clamp(2.5rem, 5vw, 4.5rem);
+  --font-size-h1:       2rem;
+  --font-size-h2:       1.5rem;
+  --font-size-h3:       1.125rem;
+  --font-size-h4:       1rem;
+  --font-size-body-lg:  1rem;
+  --font-size-body:     0.9375rem;
+  --font-size-body-sm:  0.875rem;
+  --font-size-caption:  0.75rem;
+  --font-size-stat:     2rem;
+
+  /* Line Heights */
+  --line-height-tight:   1.2;
+  --line-height-heading: 1.35;
+  --line-height-body:    1.6;
+  --line-height-caption: 1.4;
+
+  /* Letter Spacing */
+  --tracking-tight:  -0.02em;
+  --tracking-normal:  0em;
+  --tracking-wide:    0.08em;
+
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SECTION 6 — LAYOUT
+     ═══════════════════════════════════════════════════════════════════════ */
+  --layout-content-max:      1200px;
+  --layout-narrow-max:       680px;
+  --layout-landing-max:      1280px;
+  --layout-sidebar-width:    240px;
+  --layout-sidebar-collapsed: 52px;
+  --layout-navbar-height:    64px;
+  --layout-budgetbar-height: 56px;
+  --layout-adminstrip-height: 40px;
+
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SECTION 7 — MOTION / ANIMATION
+     "Gliding" motion language: no bouncing, no springs (CSS),
+     no overshoot. 150–250ms for interactive, 200ms standard.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* Duration Tokens */
+  --duration-instant:    0ms;
+  --duration-micro:      50ms;
+  --duration-fast:       150ms;
+  --duration-standard:   200ms;
+  --duration-slow:       250ms;
+  --duration-narrative:  2500ms;
+  --duration-carousel:   6000ms;
+  --duration-carousel-transition: 1200ms;
+
+  /* Easing Tokens */
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-enter:    cubic-bezier(0, 0, 0.2, 1);
+  --easing-exit:     cubic-bezier(0.4, 0, 1, 1);
+
+  /* Composed Transition Shorthand Tokens */
+  --transition-fast:     150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base:     200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:     250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Keyframe Animations */
+  --animate-shimmer:       shimmer 1.5s infinite;
+  --animate-fadeIn:        fadeIn 0.3s var(--easing-enter) forwards;
+  --animate-slideInLeft:   slideInLeft 0.2s var(--easing-enter) forwards;
+  --animate-slideInRight:  slideInRight 0.2s var(--easing-enter) forwards;
+  --animate-pulse-slow:    pulse 2.5s ease-in-out infinite;
 
   @keyframes shimmer {
     0%   { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
   @keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-20px); }
-    to { opacity: 1; transform: translateX(0); }
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0); }
   }
   @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(20px); }
-    to { opacity: 1; transform: translateX(0); }
+    from { opacity: 0; transform: translateX(16px); }
+    to   { opacity: 1; transform: translateX(0); }
   }
   @keyframes pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    50%      { opacity: 0.5; }
   }
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
-  }
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
-    50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
-  }
+
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SECTION 8 — BREAKPOINTS
+     ═══════════════════════════════════════════════════════════════════════ */
+  --breakpoint-sm: 0px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 9 — BASE LAYER
+   Global resets, body defaults, scrollbar, form baselines, accessibility.
+   ═══════════════════════════════════════════════════════════════════════════ */
 @layer base {
-  * {
+
+  /* ── 9.1  Box Model Reset ──────────────────────────────────────────────── */
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
   }
 
+  /* ── 9.2  HTML ─────────────────────────────────────────────────────────── */
   html {
     scroll-behavior: smooth;
+    /* Reserve 64px for fixed navbar so anchor scrolls don't hide behind it */
+    scroll-padding-top: var(--layout-navbar-height);
+    /* Prevent horizontal overflow from any content */
+    overflow-x: hidden;
+    /* Text size adjust for mobile zoom */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
+  /* ── 9.3  Body — Aurora Dark Mode Default ──────────────────────────────── */
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--color-bg-primary);
+    font-family: var(--font-family-body);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
     color: var(--color-text-primary);
-    line-height: 1.6;
+    background-color: var(--color-surface-base);
+
+    /* Font rendering */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv11", "ss01";  /* Inter OpenType features */
+    text-rendering: optimizeLegibility;
+
+    /* Prevent horizontal scroll */
     overflow-x: hidden;
+
+    /* Minimum height for single-page layouts */
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 
-  /* ── Scrollbar ── */
+
+  /* ── 9.4  Scrollbar — Dark, Subtle, Aurora-Branded ─────────────────────── */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: var(--color-bg-secondary);
+    background: var(--color-surface-default);
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--color-accent-primary);
-    border-radius: 99px;
+    background: var(--color-indigo-700);
+    border-radius: var(--radius-full);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-accent-secondary);
+    background: var(--color-indigo-600);
   }
 
-  /* ── Baseline dark styling for bare form controls ── */
-  input, select, textarea {
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    color: var(--color-text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9375rem;
-    padding: 0.6rem 0.875rem;
-    outline: none;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-indigo-700) var(--color-surface-default);
   }
-  input::placeholder, select::placeholder, textarea::placeholder {
+
+
+  /* ── 9.5  Typography Hierarchy ─────────────────────────────────────────── */
+  /* Display headings use Bricolage Grotesque; body uses Inter.               */
+  /* These base styles ensure consistent hierarchy before component styles.   */
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-display);
+    color: var(--color-text-primary);
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--line-height-heading);
+    font-weight: 700;
+  }
+
+  h1 { font-size: var(--font-size-h1); line-height: var(--line-height-tight); }
+  h2 { font-size: var(--font-size-h2); }
+  h3 { font-size: var(--font-size-h3); }
+  h4 { font-size: var(--font-size-h4); letter-spacing: var(--tracking-normal); }
+
+  p {
+    font-family: var(--font-family-body);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
+    color: var(--color-text-secondary);
+  }
+
+  small {
+    font-size: var(--font-size-caption);
+    line-height: var(--line-height-caption);
     color: var(--color-text-muted);
   }
-  input:focus, select:focus, textarea:focus {
-    border-color: var(--color-accent-primary);
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+
+  strong, b {
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--color-text-link);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+  a:hover {
+    color: var(--color-text-link-hover);
+  }
+
+
+  /* ── 9.6  Form Controls — Aurora Dark Mode Baseline ────────────────────── */
+  input, select, textarea {
+    font-family: var(--font-family-body);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm);
+    padding: 0.625rem 0.875rem;
+    outline: none;
+    transition:
+      border-color var(--transition-fast),
+      box-shadow var(--transition-fast),
+      background-color var(--transition-fast);
+  }
+
+  input::placeholder,
+  select::placeholder,
+  textarea::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  input:hover,
+  select:hover,
+  textarea:hover {
+    border-color: var(--color-border-interactive);
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-indigo-dim);
+    background: var(--color-surface-default);
   }
 
   select option {
-    background: var(--color-bg-card);
+    background: var(--color-surface-raised);
     color: var(--color-text-primary);
   }
 
-  input[type="checkbox"], input[type="radio"], input[type="range"],
-  input[type="file"], input[type="color"] {
+  /* Reset styled inputs that should not inherit form-control styling */
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  input[type="file"],
+  input[type="color"] {
     background: none;
     border: none;
     border-radius: 0;
@@ -152,21 +490,83 @@
 
   label {
     display: block;
-    font-size: 0.875rem;
+    font-family: var(--font-family-body);
+    font-size: var(--font-size-body-sm);
     font-weight: 500;
     color: var(--color-text-secondary);
     margin-bottom: 0.375rem;
   }
+
   .input-group label {
     margin-bottom: 0;
   }
 
-  /* ── Mapbox popups — match the dark theme ── */
+  /* Autofill styling override for dark mode */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-text-primary);
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface-raised) inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+
+  /* ── 9.7  Focus Ring — Global Accessibility Default ────────────────────── */
+  /* All interactive elements get a visible focus ring. No exceptions.         */
+  :focus-visible {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
+  }
+
+  /* Suppress the default outline when :focus-visible is available */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+
+  /* ── 9.8  Selection ────────────────────────────────────────────────────── */
+  ::selection {
+    background: var(--color-indigo-dim);
+    color: var(--color-text-primary);
+  }
+
+
+  /* ── 9.9  Media — Image and Video Defaults ─────────────────────────────── */
+  img, video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  img {
+    /* Prevent alt text from overflowing if image fails to load */
+    overflow: hidden;
+    font-size: var(--font-size-caption);
+    color: var(--color-text-muted);
+  }
+
+
+  /* ── 9.10  Reduced Motion ──────────────────────────────────────────────── */
+  /* Respect user preference. All translateX/Y animations become opacity-only */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+
+  /* ── 9.11  Mapbox Popups — Aurora Dark Theme ───────────────────────────── */
+  /* Map popups always use the dark raised surface (per Aurora Map Palette)    */
   .mapboxgl-popup-content {
-    background: var(--color-bg-card) !important;
-    border: 1px solid var(--color-border);
+    background: var(--color-surface-raised) !important;
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-md);
     color: var(--color-text-primary);
     padding: 0.875rem 1rem;
   }
@@ -180,15 +580,212 @@
     color: var(--color-text-primary);
   }
   .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
-    border-bottom-color: var(--color-bg-card) !important;
+    border-bottom-color: var(--color-surface-raised) !important;
   }
   .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
-    border-top-color: var(--color-bg-card) !important;
+    border-top-color: var(--color-surface-raised) !important;
   }
   .mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-    border-right-color: var(--color-bg-card) !important;
+    border-right-color: var(--color-surface-raised) !important;
   }
   .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-    border-left-color: var(--color-bg-card) !important;
+    border-left-color: var(--color-surface-raised) !important;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 10 — UTILITY CLASSES
+   Composable utilities for Aurora design patterns.
+   These complement Tailwind utilities for Aurora-specific needs.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+
+  /* ── 10.1  Typography Utilities ────────────────────────────────────────── */
+  .font-display {
+    font-family: var(--font-family-display);
+  }
+  .font-body {
+    font-family: var(--font-family-body);
+  }
+
+  .text-display {
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-display);
+    font-weight: 800;
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--tracking-tight);
+    color: var(--color-text-primary);
+  }
+
+  .text-stat {
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-stat);
+    font-weight: 800;
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--tracking-tight);
+    color: var(--color-text-primary);
+  }
+
+  .text-section-label {
+    font-family: var(--font-family-body);
+    font-size: var(--font-size-caption);
+    font-weight: 500;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+
+  /* ── 10.2  Surface Utilities ───────────────────────────────────────────── */
+  .surface-base    { background-color: var(--color-surface-base); }
+  .surface-default { background-color: var(--color-surface-default); }
+  .surface-raised  { background-color: var(--color-surface-raised); }
+  .surface-overlay { background-color: var(--color-surface-overlay); }
+
+  .surface-glass {
+    background: var(--color-surface-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+
+  /* ── 10.3  Layout Container Utilities ──────────────────────────────────── */
+  .container-content {
+    width: 100%;
+    max-width: var(--layout-content-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--spacing-4);
+    padding-right: var(--spacing-4);
+  }
+  @media (min-width: 768px) {
+    .container-content {
+      padding-left: var(--spacing-6);
+      padding-right: var(--spacing-6);
+    }
+  }
+  @media (min-width: 1024px) {
+    .container-content {
+      padding-left: var(--spacing-8);
+      padding-right: var(--spacing-8);
+    }
+  }
+  @media (min-width: 1280px) {
+    .container-content {
+      padding-left: var(--spacing-12);
+      padding-right: var(--spacing-12);
+    }
+  }
+
+  .container-narrow {
+    width: 100%;
+    max-width: var(--layout-narrow-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--spacing-4);
+    padding-right: var(--spacing-4);
+  }
+
+  .container-landing {
+    width: 100%;
+    max-width: var(--layout-landing-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--spacing-4);
+    padding-right: var(--spacing-4);
+  }
+  @media (min-width: 768px) {
+    .container-landing {
+      padding-left: var(--spacing-6);
+      padding-right: var(--spacing-6);
+    }
+  }
+  @media (min-width: 1024px) {
+    .container-landing {
+      padding-left: var(--spacing-16);
+      padding-right: var(--spacing-16);
+    }
+  }
+
+
+  /* ── 10.4  Scrim — Photography Text Overlay ────────────────────────────── */
+  .scrim-bottom {
+    background: linear-gradient(
+      to top,
+      rgba(14, 17, 23, 0.95) 0%,
+      rgba(14, 17, 23, 0.55) 35%,
+      rgba(14, 17, 23, 0.20) 60%,
+      transparent 80%
+    );
+  }
+
+  .scrim-full {
+    background: linear-gradient(
+      135deg,
+      var(--color-surface-default) 0%,
+      transparent 100%
+    );
+  }
+
+
+  /* ── 10.5  Aurora Gradient ─────────────────────────────────────────────── */
+  .aurora-gradient {
+    background: linear-gradient(135deg, #3D52A0, #6277CC, #6BA3D6);
+  }
+
+  .aurora-gradient-text {
+    /* Forbidden by guidelines — included only as a disabled reference.       */
+    /* Never use gradient-clipped text in Aurora.                              */
+  }
+
+
+  /* ── 10.6  Skeleton Loading ────────────────────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-default) 0%,
+      var(--color-surface-raised) 40%,
+      var(--color-surface-default) 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+    border-radius: var(--radius-md);
+  }
+
+
+  /* ── 10.7  Interaction Utilities ────────────────────────────────────────── */
+  .hover-lift {
+    transition:
+      transform var(--transition-fast),
+      box-shadow var(--transition-fast);
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .press-scale:active {
+    transform: scale(0.98);
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 11 — HIGH CONTRAST & FORCED COLORS
+   Ensures usability in Windows High Contrast Mode / forced-colors.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  a {
+    color: LinkText;
+  }
+
+  button, [role="button"] {
+    border: 1px solid ButtonText;
   }
 }
