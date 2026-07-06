@@ -32,7 +32,7 @@ import ItineraryTab from './components/Planner/ItineraryTab'
 import EssentialsTab from './components/Planner/EssentialsTab'
 import SuggestionsTab from './components/Planner/SuggestionsTab'
 import DraftsTab from './components/Planner/DraftsTab'
-import MapPreview from './components/Planner/MapPreview'
+import MapPreview from '../TripDetail/components/MapPreview'
 import AIInsights from './components/Planner/AIInsights'
 import QuickActions from './components/Planner/QuickActions'
 
@@ -203,44 +203,25 @@ export default function Planner() {
 
 
       {/* Page header */}
-      <div style={{
-        marginBottom: '2rem',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        gap: '1rem',
-      }}>
-        <div>
-          <h1 style={{
-            fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.375rem',
-            fontFamily: 'Plus Jakarta Sans, sans-serif',
-          }}>
-            AI Trip <span className="bg-gradient-primary bg-clip-text text-transparent">Planner</span>
-          </h1>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-            Describe your dream trip — Gemini crafts your perfect itinerary
-          </p>
+      {!plan && (
+        <div style={{
+          marginBottom: '2rem',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+          gap: '1rem',
+        }}>
+          <div>
+            <h1 style={{
+              fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.375rem',
+              fontFamily: 'Plus Jakarta Sans, sans-serif',
+            }}>
+              AI Trip <span className="bg-gradient-primary bg-clip-text text-transparent">Planner</span>
+            </h1>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+              Describe your dream trip — Gemini crafts your perfect itinerary
+            </p>
+          </div>
         </div>
-        {plan && (
-          <button
-            onClick={() => dispatch(resetPlan())}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.5rem 1rem',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 10,
-              color: 'var(--color-text-secondary)',
-              fontSize: '0.825rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(14,165,233,0.3)'; e.currentTarget.style.color = '#0EA5E9' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
-          >
-            <RotateCcw size={14} /> New Plan
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Error */}
       {error && !loading && (
@@ -299,9 +280,6 @@ export default function Planner() {
             className="grid-cols-1 lg:grid-cols-[2fr_1fr]"
           >
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Budget Tracker */}
-              <BudgetBar liveBudget={liveBudget} totalBudget={Number(form.budget)} status={status} />
-
               {/* Trip Summary Header */}
               <TripSummaryHero
                 destination={plan.meta?.destination || form.destination}
@@ -310,7 +288,11 @@ export default function Planner() {
                 theme={plan.meta?.theme}
                 numTravelers={form.numTravelers}
                 groupType={form.groupType}
+                onNewPlan={() => dispatch(resetPlan())}
               />
+
+              {/* Budget Tracker */}
+              <BudgetBar liveBudget={liveBudget} totalBudget={Number(form.budget)} status={status} />
 
               {/* Quick Actions (Print, Share, Save) */}
               <QuickActions
@@ -415,7 +397,7 @@ export default function Planner() {
 
             {/* Sidebar (Map Preview & Trip Copilot Assistant) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <MapPreview dayData={plan.itinerary?.[activeDay]} />
+              <MapPreview trip={{ destination: plan.meta?.destination || form.destination }} />
               <TripAssistant />
             </div>
           </motion.div>

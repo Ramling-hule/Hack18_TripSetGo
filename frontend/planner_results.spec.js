@@ -7,7 +7,7 @@ import path from 'path'
 import fs from 'fs'
 
 const BASE_URL       = 'http://localhost:3000'
-const ARTIFACTS_DIR  = 'C:/Users/ASUS/.gemini/antigravity-ide/brain/575cc923-d8c1-419f-94c9-ba38ef8e48ac'
+const ARTIFACTS_DIR  = 'C:/Users/ASUS/.gemini/antigravity-ide/brain/15e57b3f-4e57-4188-9a08-50d4896e08a7'
 const EMAIL          = 'testuser@tripsetgo.com'
 const PASSWORD       = 'password123'
 
@@ -133,8 +133,8 @@ test.describe('Planner Results Screen', () => {
     await page.setViewportSize(VIEWPORTS.desktop)
     await navigateAndGenerate(page)
 
-    // 1. Verify Hero Header (Second h1 on page is destination)
-    const heroHeading = page.locator('h1').nth(1)
+    // 1. Verify Hero Header (First h1 on page is now the destination)
+    const heroHeading = page.locator('h1').first()
     await expect(heroHeading).toBeVisible()
     console.log(`🏙️ Hero Heading: "${await heroHeading.innerText()}"`)
 
