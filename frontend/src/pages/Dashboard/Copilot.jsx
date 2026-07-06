@@ -1,4 +1,4 @@
-﻿// src/pages/Dashboard/Copilot.jsx
+// src/pages/Dashboard/Copilot.jsx
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -83,6 +83,11 @@ export default function Copilot() {
     } catch { /* ignore */ }
   }
 
+  const getCookie = (name) => {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+    return match ? decodeURIComponent(match[1]) : null
+  }
+
   const send = async (text) => {
     const content = (text ?? input).trim()
     if (!content || streaming) return
@@ -92,9 +97,14 @@ export default function Copilot() {
     let newConvId = convId
     try {
       const token = localStorage.getItem('accessToken')
+      const csrfToken = getCookie('csrfToken')
       const res = await fetch(`${API_BASE}/api/v1/copilot/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
+        },
         body: JSON.stringify({ message: content, conversationId: convId, tripId }),
       })
       if (!res.ok || !res.body) throw new Error('stream failed')

@@ -591,6 +591,20 @@
   .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
     border-left-color: var(--color-surface-raised) !important;
   }
+
+  /* Hide native browser datepicker indicators to prevent duplicate icon clashes */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    bottom: 0;
+    color: transparent;
+    cursor: pointer;
+    height: auto;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
+  }
 }
 
 

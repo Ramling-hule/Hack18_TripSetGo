@@ -6,7 +6,43 @@ import { Link } from 'react-router-dom'
 import Card from '@/components/common/Card'
 import Button from '@/components/common/Button'
 
-export default function ProBanner({ className = '', onUpgrade }) {
+export default function ProBanner({ className = '', onUpgrade, variant = 'raised' }) {
+  if (variant === 'inline') {
+    return (
+      <div
+        style={{
+          height: 52,
+          background: 'var(--color-indigo-dim)',
+          borderBottom: '1px solid rgba(98, 119, 204, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 var(--spacing-10)',
+          width: '100%',
+        }}
+        className={`flex items-center justify-between px-6 md:px-10 ${className}`}
+      >
+        <div className="flex items-center gap-3">
+          <Sparkles size={18} style={{ color: 'var(--color-indigo-400)', flexShrink: 0 }} />
+          <span className="text-[var(--font-size-body-sm)] font-medium text-[var(--color-indigo-400)] truncate">
+            Upgrade to Pro for unlimited trips and priority AI.
+          </span>
+        </div>
+        {onUpgrade ? (
+          <Button variant="primary" size="sm" onClick={onUpgrade}>
+            Upgrade
+          </Button>
+        ) : (
+          <Link to="/dashboard/subscription" className="no-underline">
+            <Button variant="primary" size="sm">
+              Upgrade
+            </Button>
+          </Link>
+        )}
+      </div>
+    )
+  }
+
   return (
     <Card
       variant="raised"

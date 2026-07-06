@@ -10,15 +10,48 @@ export default function EmptyState({
   description,
   action,
   className = '',
+  style = {},
+  bgImage = null,
 }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center text-center py-16 px-6 ${className}`}
+      className={`relative flex flex-col items-center justify-center text-center py-16 px-6 overflow-hidden ${className}`}
+      style={{ ...style }}
     >
+      {/* Background Image layer */}
+      {bgImage && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        >
+          <img
+            src={bgImage}
+            alt=""
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: 0.1,
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, var(--color-surface-default) 0%, transparent 100%)',
+            }}
+          />
+        </div>
+      )}
+
       {/* Icon container */}
       {icon && (
         <div
-          className="mb-5"
+          className="mb-5 relative z-10"
           style={{
             width: 72,
             height: 72,
@@ -38,7 +71,7 @@ export default function EmptyState({
       {/* Title */}
       {title && (
         <h3
-          className="mb-2"
+          className="mb-2 relative z-10"
           style={{
             fontFamily: 'var(--font-family-display)',
             fontSize: 'var(--font-size-h3)',
@@ -53,7 +86,7 @@ export default function EmptyState({
       {/* Description */}
       {description && (
         <p
-          className="mb-6 max-w-sm"
+          className="mb-6 max-w-sm relative z-10"
           style={{
             fontSize: 'var(--font-size-body-sm)',
             lineHeight: 'var(--line-height-body)',
@@ -66,14 +99,16 @@ export default function EmptyState({
 
       {/* CTA */}
       {action && (
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={action.icon}
-          onClick={action.onClick}
-        >
-          {action.label}
-        </Button>
+        <div className="relative z-10">
+          <Button
+            variant={action.variant || 'secondary'}
+            size="sm"
+            icon={action.icon}
+            onClick={action.onClick}
+          >
+            {action.label}
+          </Button>
+        </div>
       )}
     </div>
   )

@@ -3,6 +3,7 @@
 // Per Screen Blueprint: PhotographyCard scrim formula, 4:3 aspect ratio
 import { Heart, Calendar, MapPin, Users } from 'lucide-react'
 import Badge from '@/components/common/Badge'
+import { getDestinationImage } from '@/utils/imageUtils'
 
 export default function TripCard({
   trip,
@@ -14,6 +15,7 @@ export default function TripCard({
   if (!trip) return null
 
   const { title, destination, coverImage, startDate, endDate, status, memberCount, isLiked } = trip
+  const activeCover = coverImage || getDestinationImage(destination || title || '')
 
   const formatDate = (d) => {
     if (!d) return ''
@@ -45,27 +47,12 @@ export default function TripCard({
     >
       {/* Photography */}
       <div className="relative" style={{ aspectRatio: variant === 'compact' ? '16/9' : '4/3' }}>
-        {coverImage ? (
-          <img
-            src={coverImage}
-            alt={title || destination}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{
-              background: 'var(--color-surface-raised)',
-              color: 'var(--color-text-muted)',
-              fontFamily: 'var(--font-family-display)',
-              fontSize: 'var(--font-size-h1)',
-              fontWeight: 800,
-            }}
-          >
-            {(destination || title || '?')[0]}
-          </div>
-        )}
+        <img
+          src={activeCover}
+          alt={title || destination}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
 
         {/* Scrim overlay */}
         <div className="scrim-bottom absolute inset-0" />
