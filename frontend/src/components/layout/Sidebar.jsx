@@ -2,18 +2,19 @@
 // Aurora Design System — Dashboard sidebar navigation
 // Active: indigo.dim bg + indigo.400 text + 3px left border
 // Per Aurora Section 9: Navigation Item (Sidebar)
-import { NavLink, useNavigate } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
-import { selectUser, logout } from '@/features/auth/authSlice'
 import {
   LayoutDashboard, Map, Compass, Briefcase,
   Receipt, BarChart3, CreditCard, Bell, User, MapPin,
-  Users, MessageSquare, Terminal, LogOut, Globe
+  Users, MessageSquare, Terminal, LogOut, Globe, Sparkles
 } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import { selectUser, logout } from '@/features/auth/authSlice'
 
 const navItems = [
   { icon: <LayoutDashboard size={18} />, label: 'Dashboard',    to: '/dashboard' },
   { icon: <Map size={18} />,             label: 'Plan a Trip',  to: '/dashboard/planner' },
+  { icon: <Sparkles size={18} />,        label: 'AI Copilot',   to: '/dashboard/copilot' },
   { icon: <Compass size={18} />,         label: 'Discover',     to: '/dashboard/discover' },
   { icon: <Globe size={18} />,           label: 'Explore Hub',  to: '/dashboard/explore' },
   { icon: <Briefcase size={18} />,       label: 'My Trips',     to: '/dashboard/trips' },
@@ -78,8 +79,8 @@ export default function Sidebar({ isOpen = false }) {
         flex flex-col gap-0.5
         transition-transform duration-[var(--duration-slow)] ease-[var(--easing-standard)]
         z-50
-        -translate-x-full md:translate-x-0
-        ${isOpen ? 'translate-x-0 shadow-[var(--shadow-lg)]' : ''}
+        md:translate-x-0
+        ${isOpen ? 'translate-x-0 shadow-[var(--shadow-lg)]' : '-translate-x-full'}
       `}
     >
       {/* Nav section label */}

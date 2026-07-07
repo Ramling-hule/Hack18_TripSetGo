@@ -21,7 +21,8 @@ export const fetchTrip = createAsyncThunk('trips/fetchTrip', async (id, { dispat
 
 export const likeTrip = createAsyncThunk('trips/likeTrip', async (id, { dispatch, rejectWithValue }) => {
   try {
-    return await dispatch(tripsApi.endpoints.likeTrip.initiate(id)).unwrap()
+    const res = await dispatch(tripsApi.endpoints.likeTrip.initiate(id)).unwrap()
+    return { ...res, id }
   } catch (err) {
     return rejectWithValue(err.data?.message || err.message || 'Failed to like trip')
   }
@@ -29,7 +30,8 @@ export const likeTrip = createAsyncThunk('trips/likeTrip', async (id, { dispatch
 
 export const saveTrip = createAsyncThunk('trips/saveTrip', async (id, { dispatch, rejectWithValue }) => {
   try {
-    return await dispatch(tripsApi.endpoints.saveTrip.initiate(id)).unwrap()
+    const res = await dispatch(tripsApi.endpoints.saveTrip.initiate(id)).unwrap()
+    return { ...res, id }
   } catch (err) {
     return rejectWithValue(err.data?.message || err.message || 'Failed to save trip')
   }
