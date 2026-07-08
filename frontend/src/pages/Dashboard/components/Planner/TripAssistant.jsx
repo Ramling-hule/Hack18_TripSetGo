@@ -4,7 +4,7 @@ import { Sparkles, Plus, Trash2, Send } from 'lucide-react'
 import { setCopilotConversationId } from '../../../../features/planner/plannerSlice'
 import api from '../../../../services/api'
 
-const plannerGlassPanelClass = 'bg-[rgba(26,31,47,0.7)] backdrop-blur-[40px] border border-solid border-[rgba(255,255,255,0.08)] border-t-[rgba(255,255,255,0.12)] shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]'
+const plannerGlassPanelClass = 'bg-surface-glass border border-border-default backdrop-blur-2xl shadow-lg'
 
 export default function TripAssistant() {
   const [conversations, setConversations] = useState([])
@@ -53,6 +53,11 @@ export default function TripAssistant() {
     } catch { /* ignore */ }
   }
 
+  const getCookie = (name) => {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+    return match ? decodeURIComponent(match[1]) : null
+  }
+
   const send = async (text) => {
     const content = (text ?? input).trim()
     if (!content || streaming) return
@@ -62,9 +67,14 @@ export default function TripAssistant() {
     let newConvId = convId
     try {
       const token = localStorage.getItem('accessToken')
+      const csrfToken = getCookie('csrfToken')
       const res = await fetch(`${API_BASE}/api/v1/copilot/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
+        },
         body: JSON.stringify({ message: content, conversationId: convId }),
       })
       if (!res.ok || !res.body) throw new Error('stream failed')
@@ -125,36 +135,35 @@ export default function TripAssistant() {
 
   return (
     <div className={plannerGlassPanelClass} style={{
-      borderRadius: 20,
+      borderRadius: 'var(--radius-xl)',
       display: 'flex',
       flexDirection: 'column',
-      height: '100%',
-      minHeight: 580,
+      height: 680,
       overflow: 'hidden',
     }}>
       {/* Chat Header */}
       <div style={{
         padding: '1.25rem 1.5rem',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid var(--color-border-subtle)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: 'rgba(255,255,255,0.02)',
+        background: 'var(--color-surface-hover)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
             width: 38, height: 38, borderRadius: 10,
-            background: 'linear-gradient(135deg, #0EA5E9, #8B5CF6)',
+            background: 'linear-gradient(135deg, var(--color-indigo-700), var(--color-sky-500))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 16px rgba(14,165,233,0.3)',
+            boxShadow: 'var(--shadow-primary)',
           }}>
             <Sparkles size={18} color="white" />
           </div>
           <div>
-            <h3 style={{ fontWeight: 700, fontSize: '0.95rem', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+            <h3 style={{ fontWeight: 700, fontSize: '0.95rem', fontFamily: 'var(--font-family-display)' }}>
               Gemini Trip Assistant
             </h3>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem' }}>
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.72rem' }}>
               Chat to brainstorm ideas or fine-tune details
             </p>
           </div>
@@ -165,17 +174,23 @@ export default function TripAssistant() {
           style={{
             display: 'flex', alignItems: 'center', gap: '0.3rem',
             padding: '0.35rem 0.75rem',
-            background: 'rgba(14,165,233,0.08)',
-            border: '1px solid rgba(14,165,233,0.2)',
+            background: 'var(--color-indigo-dim)',
+            border: '1px solid rgba(138,151,221,0.25)',
             borderRadius: 8,
-            color: '#0EA5E9',
+            color: 'var(--color-indigo-300)',
             fontSize: '0.78rem',
             fontWeight: 600,
             cursor: 'pointer',
             transition: 'all 0.2s',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(14,165,233,0.15)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(14,165,233,0.08)'}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(61,82,160,0.2)';
+            e.currentTarget.style.color = '#fff';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'var(--color-indigo-dim)';
+            e.currentTarget.style.color = 'var(--color-indigo-300)';
+          }}
         >
           <Plus size={13} /> New
         </button>
@@ -186,7 +201,7 @@ export default function TripAssistant() {
         <div style={{
           display: 'flex', gap: '0.4rem', overflowX: 'auto',
           padding: '0.625rem 1rem',
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
+          borderBottom: '1px solid var(--color-border-subtle)',
           scrollbarWidth: 'none',
         }}>
           {conversations.slice(0, 5).map(c => (
@@ -197,10 +212,10 @@ export default function TripAssistant() {
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.3rem',
                 padding: '0.25rem 0.625rem',
-                background: c._id === convId ? 'rgba(14,165,233,0.12)' : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${c._id === convId ? 'rgba(14,165,233,0.4)' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: 99,
-                color: c._id === convId ? '#0EA5E9' : 'var(--color-text-muted)',
+                background: c._id === convId ? 'var(--color-indigo-dim)' : 'var(--color-surface-hover)',
+                border: `1px solid ${c._id === convId ? 'var(--color-indigo-500)' : 'var(--color-border-subtle)'}`,
+                borderRadius: 'var(--radius-full)',
+                color: c._id === convId ? '#fff' : 'var(--color-text-secondary)',
                 fontSize: '0.72rem',
                 fontWeight: 500,
                 whiteSpace: 'nowrap',
@@ -234,17 +249,17 @@ export default function TripAssistant() {
           }}>
             <div style={{
               width: 64, height: 64, borderRadius: '50%',
-              background: 'rgba(14,165,233,0.1)',
+              background: 'var(--color-indigo-dim)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               marginBottom: '1rem',
-              boxShadow: '0 0 24px rgba(14,165,233,0.15)',
+              boxShadow: 'var(--shadow-primary)',
             }}>
-              <Sparkles size={28} style={{ color: '#0EA5E9' }} />
+              <Sparkles size={28} style={{ color: 'var(--color-indigo-400)' }} />
             </div>
-            <h4 style={{ fontWeight: 700, fontSize: '1rem', fontFamily: 'Plus Jakarta Sans, sans-serif', marginBottom: '0.4rem' }}>
+            <h4 style={{ fontWeight: 700, fontSize: '1rem', fontFamily: 'var(--font-family-display)', marginBottom: '0.4rem', color: '#fff' }}>
               How can I help with your plan?
             </h4>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', marginBottom: '1.25rem' }}>
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.78rem', marginBottom: '1.25rem' }}>
               Ask me anything about your trip or try a quick prompt:
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
@@ -255,8 +270,8 @@ export default function TripAssistant() {
                   onClick={() => send(prompt)}
                   style={{
                     padding: '0.5rem 0.875rem',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.07)',
+                    background: 'var(--color-surface-hover)',
+                    border: '1px solid var(--color-border-default)',
                     borderRadius: 8,
                     color: 'var(--color-text-secondary)',
                     fontSize: '0.78rem',
@@ -265,13 +280,13 @@ export default function TripAssistant() {
                     transition: 'all 0.2s',
                   }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(14,165,233,0.06)'
-                    e.currentTarget.style.borderColor = 'rgba(14,165,233,0.2)'
-                    e.currentTarget.style.color = '#dee1f7'
+                    e.currentTarget.style.background = 'var(--color-indigo-dim)'
+                    e.currentTarget.style.borderColor = 'var(--color-indigo-500)'
+                    e.currentTarget.style.color = '#fff'
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
+                    e.currentTarget.style.background = 'var(--color-surface-hover)'
+                    e.currentTarget.style.borderColor = 'var(--color-border-default)'
                     e.currentTarget.style.color = 'var(--color-text-secondary)'
                   }}
                 >
@@ -290,18 +305,18 @@ export default function TripAssistant() {
                   padding: '0.625rem 0.875rem',
                   borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                   background: isUser
-                    ? 'linear-gradient(135deg, #0EA5E9, #14B8A6)'
-                    : 'rgba(255,255,255,0.05)',
-                  border: isUser ? 'none' : '1px solid rgba(255,255,255,0.07)',
-                  color: isUser ? 'white' : 'var(--color-text-primary)',
+                    ? 'linear-gradient(135deg, var(--color-indigo-700), var(--color-sky-500))'
+                    : 'var(--color-surface-raised)',
+                  border: isUser ? 'none' : '1px solid var(--color-border-default)',
+                  color: isUser ? '#fff' : 'var(--color-text-primary)',
                   fontSize: '0.84rem',
                   lineHeight: 1.6,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
-                  boxShadow: isUser ? '0 4px 12px rgba(14,165,233,0.2)' : 'none',
+                  boxShadow: isUser ? 'var(--shadow-primary)' : 'none',
                 }}>
                   {m.text || (streaming && i === messages.length - 1
-                    ? <span style={{ color: 'var(--color-text-muted)', animation: 'pulse 1.5s infinite' }}>Thinking…</span>
+                    ? <span style={{ color: 'var(--color-text-secondary)', animation: 'pulse 1.5s infinite' }}>Thinking…</span>
                     : '')}
                 </div>
               </div>
@@ -313,8 +328,8 @@ export default function TripAssistant() {
       {/* Input area */}
       <div style={{
         padding: '0.875rem 1rem',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(255,255,255,0.02)',
+        borderTop: '1px solid var(--color-border-subtle)',
+        background: 'var(--color-surface-hover)',
       }}>
         <form
           onSubmit={e => { e.preventDefault(); send() }}
@@ -329,8 +344,8 @@ export default function TripAssistant() {
               flex: 1,
               height: 38,
               boxSizing: 'border-box',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'var(--color-surface-base)',
+              border: '1px solid var(--color-border-default)',
               borderRadius: 99,
               padding: '0 1rem',
               color: 'var(--color-text-primary)',
@@ -338,21 +353,21 @@ export default function TripAssistant() {
               outline: 'none',
               transition: 'border-color 0.2s',
             }}
-            onFocus={e => e.target.style.borderColor = '#0EA5E9'}
-            onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+            onFocus={e => e.target.style.borderColor = 'var(--color-border-focus)'}
+            onBlur={e => e.target.style.borderColor = 'var(--color-border-default)'}
           />
           <button
             type="submit"
             disabled={streaming || !input.trim()}
             style={{
               width: 38, height: 38, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #0EA5E9, #14B8A6)',
+              background: 'linear-gradient(135deg, var(--color-indigo-700), var(--color-sky-500))',
               border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: streaming || !input.trim() ? 'not-allowed' : 'pointer',
               opacity: streaming || !input.trim() ? 0.5 : 1,
               transition: 'all 0.2s',
-              boxShadow: '0 2px 8px rgba(14,165,233,0.3)',
+              boxShadow: 'var(--shadow-primary)',
               flexShrink: 0,
             }}
           >

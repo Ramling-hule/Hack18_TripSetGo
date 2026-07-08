@@ -1,4 +1,6 @@
 // src/pages/Auth/Signup.jsx
+// Aurora Design System — Signup Page
+// Password strength checks, validation messages, and email pending actions.
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
@@ -7,6 +9,11 @@ import { Mail, Lock, User } from 'lucide-react'
 import { signup, selectAuthLoading, selectAuthError, clearError, setPendingEmail } from '@/features/auth/authSlice'
 import Input from '@/components/common/Input'
 import Button from '@/components/common/Button'
+import AuthLayout from '@/components/layout/AuthLayout'
+import AuthHeader from '@/components/domain/auth/AuthHeader'
+import PasswordStrength from '@/components/domain/auth/PasswordStrength'
+import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/authValidation'
+import { entrance } from '@/components/landing/animations/variants'
 
 export default function Signup() {
   const dispatch = useDispatch()
@@ -21,8 +28,17 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLocalErr('')
-    if (form.password !== form.confirmPassword) { setLocalErr('Passwords do not match'); return }
-    if (form.password.length < 8) { setLocalErr('Password must be at least 8 characters'); return }
+
+    // Validate inputs
+    const emailErr = validateEmail(form.email)
+    if (emailErr) { setLocalErr(emailErr); return }
+
+    const pwdErr = validatePassword(form.password)
+    if (pwdErr) { setLocalErr(pwdErr); return }
+
+    const confirmErr = validateConfirmPassword(form.password, form.confirmPassword)
+    if (confirmErr) { setLocalErr(confirmErr); return }
+
     const res = await dispatch(signup({ name: form.name, email: form.email, password: form.password }))
     if (!res.error) {
       dispatch(setPendingEmail(form.email))
@@ -33,40 +49,116 @@ export default function Signup() {
   const displayError = localErr || error
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'var(--gradient-hero)', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: '15%', right: '15%', width: 280, height: 280, background: 'rgba(99,102,241,0.1)', borderRadius: '50%', filter: 'blur(80px)' }} />
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-        className="bg-bg-glass backdrop-blur-[20px] border border-border shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]" style={{ width: '100%', maxWidth: 460, padding: '2.5rem', borderRadius: 'var(--radius-xl)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <Link to="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-            <img src="/favicon.svg" style={{ width: 28, height: 28, objectFit: 'contain' }} alt="TripSetGo Logo" />
-            <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: '1.3rem' }}>Trip<span className="bg-gradient-primary bg-clip-text text-transparent">SetGo</span></span>
-          </Link>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>Create your account</h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>Start planning your dream trips today</p>
-        </div>
+    <AuthLayout
+      backgroundImageUrl="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85"
+    >
+      <motion.div
+        variants={entrance}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Header branding */}
+        <AuthHeader
+          title="Create your account"
+          subtitle="Start planning your dream trips today"
+        />
 
+        {/* Error panel */}
         {displayError && (
-          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', marginBottom: '1.25rem', color: '#f87171', fontSize: '0.875rem' }}>
+          <div
+            role="alert"
+            style={{
+              background: 'var(--color-rose-dim)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              borderRadius: 'var(--radius-sm)',
+              padding: 'var(--spacing-3) var(--spacing-4)',
+              marginBottom: 'var(--spacing-4)',
+              color: 'var(--color-rose-400)',
+              fontSize: 'var(--font-size-body-sm)',
+              fontWeight: 500,
+              textAlign: 'center',
+            }}
+          >
             {displayError}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <Input label="Full Name"        type="text"     required placeholder="John Doe"          value={form.name}            onChange={e => setForm(p => ({ ...p, name: e.target.value }))}            icon={<User size={16} />} />
-          <Input label="Email"            type="email"    required placeholder="you@email.com"     value={form.email}           onChange={e => setForm(p => ({ ...p, email: e.target.value }))}           icon={<Mail size={16} />} />
-          <Input label="Password"         type="password" required placeholder="Min. 8 characters" value={form.password}        onChange={e => setForm(p => ({ ...p, password: e.target.value }))}        icon={<Lock size={16} />} />
-          <Input label="Confirm Password" type="password" required placeholder="Confirm password"  value={form.confirmPassword} onChange={e => setForm(p => ({ ...p, confirmPassword: e.target.value }))} icon={<Lock size={16} />} />
-          <Button type="submit" loading={loading} size="lg" style={{ width: '100%', marginTop: '0.5rem' }}>
+        {/* Form fields */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+          <Input
+            label="Full Name"
+            type="text"
+            required
+            placeholder="John Doe"
+            value={form.name}
+            onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+            icon={<User size={16} />}
+          />
+          <Input
+            label="Email"
+            type="email"
+            required
+            placeholder="you@email.com"
+            value={form.email}
+            onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+            icon={<Mail size={16} />}
+          />
+          <Input
+            label="Password"
+            type="password"
+            required
+            placeholder="Min. 8 characters"
+            value={form.password}
+            onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+            icon={<Lock size={16} />}
+          />
+          
+          {/* Password strength visual feedback */}
+          {form.password && (
+            <div style={{ marginTop: -4 }}>
+              <PasswordStrength password={form.password} />
+            </div>
+          )}
+
+          <Input
+            label="Confirm Password"
+            type="password"
+            required
+            placeholder="Confirm password"
+            value={form.confirmPassword}
+            onChange={e => setForm(p => ({ ...p, confirmPassword: e.target.value }))}
+            icon={<Lock size={16} />}
+          />
+
+          <Button type="submit" loading={loading} size="lg" style={{ width: '100%', marginTop: 'var(--spacing-2)' }}>
             Create Account
           </Button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+        {/* Alternate action */}
+        <p
+          style={{
+            textAlign: 'center',
+            marginTop: 'var(--spacing-6)',
+            color: 'var(--color-text-secondary)',
+            fontSize: 'var(--font-size-body-sm)',
+            margin: 'var(--spacing-6) 0 0 0',
+          }}
+        >
           Already have an account?{' '}
-          <Link to="/auth/login" style={{ color: 'var(--color-accent-primary)', textDecoration: 'none', fontWeight: 600 }}>Sign in</Link>
+          <Link
+            to="/auth/login"
+            style={{
+              color: 'var(--color-indigo-400)',
+              textDecoration: 'none',
+              fontWeight: 600,
+            }}
+            className="hover:text-[var(--color-text-primary)] transition-colors"
+          >
+            Sign in
+          </Link>
         </p>
       </motion.div>
-    </div>
+    </AuthLayout>
   )
 }

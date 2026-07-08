@@ -1,10 +1,17 @@
 // src/pages/Auth/VerifyOTP.jsx
-import { useState, useRef, useEffect } from 'react'
+// Aurora Design System — OTP Verification Page
+// Hosts dynamic countdown, resend triggers, and split ref text fields.
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion } from 'framer-motion'
+import { Mail } from 'lucide-react'
 import { verifyOTP, resendOTP, selectAuthLoading, selectAuthError, clearError, clearSuccess } from '@/features/auth/authSlice'
 import Button from '@/components/common/Button'
+import AuthLayout from '@/components/layout/AuthLayout'
+import AuthHeader from '@/components/domain/auth/AuthHeader'
+import OTPInput from '@/components/domain/auth/OTPInput'
+import { entrance } from '@/components/landing/animations/variants'
 
 export default function VerifyOTP() {
   const dispatch = useDispatch()
@@ -15,11 +22,9 @@ export default function VerifyOTP() {
   const pendingEmail = useSelector(s => s.auth.pendingEmail)
   const [otp, setOtp] = useState(Array(6).fill(''))
   const [countdown, setCountdown] = useState(60)
-  const refs = useRef([])
 
-  useEffect(() => { refs.current[0]?.focus() }, [])
   useEffect(() => { return () => { dispatch(clearError()); dispatch(clearSuccess()) } }, [dispatch])
-  
+
   useEffect(() => {
     let timer;
     if (countdown > 0) {
@@ -27,26 +32,6 @@ export default function VerifyOTP() {
     }
     return () => clearTimeout(timer)
   }, [countdown])
-
-  const handleChange = (i, val) => {
-    if (!/^\d?$/.test(val)) return
-    const next = [...otp]
-    next[i] = val
-    setOtp(next)
-    if (val && i < 5) refs.current[i + 1]?.focus()
-  }
-
-  const handleKeyDown = (i, e) => {
-    if (e.key === 'Backspace' && !otp[i] && i > 0) refs.current[i - 1]?.focus()
-  }
-
-  const handlePaste = (e) => {
-    const data = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    if (data.length === 6) {
-      setOtp(data.split(''))
-      refs.current[5]?.focus()
-    }
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -65,74 +50,118 @@ export default function VerifyOTP() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'var(--gradient-hero)' }}>
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-        className="bg-bg-glass backdrop-blur-[20px] border border-border shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]" style={{ width: '100%', maxWidth: 420, padding: '2.5rem', borderRadius: 'var(--radius-xl)', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: '1rem' }}>📬</div>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Check your email</h1>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-          We sent a 6-digit OTP to <strong style={{ color: 'var(--color-text-primary)' }}>{pendingEmail || 'your email'}</strong>
-        </p>
+    <AuthLayout>
+      <motion.div
+        variants={entrance}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Header branding */}
+        <AuthHeader
+          icon={<Mail size={24} />}
+          title="Check your email"
+          subtitle={
+            <span>
+              We sent a 6-digit OTP to{' '}
+              <strong style={{ color: 'var(--color-text-primary)' }}>
+                {pendingEmail || 'your email'}
+              </strong>
+            </span>
+          }
+        />
 
+        {/* Error panel */}
         {error && (
-          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '1.25rem', color: '#f87171', fontSize: '0.875rem' }}>
+          <div
+            role="alert"
+            style={{
+              background: 'var(--color-rose-dim)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              borderRadius: 'var(--radius-sm)',
+              padding: 'var(--spacing-3) var(--spacing-4)',
+              marginBottom: 'var(--spacing-4)',
+              color: 'var(--color-rose-400)',
+              fontSize: 'var(--font-size-body-sm)',
+              fontWeight: 500,
+              textAlign: 'center',
+            }}
+          >
             {error}
           </div>
         )}
-        
+
+        {/* Success panel */}
         {successMsg && (
-          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '1.25rem', color: '#10b981', fontSize: '0.875rem' }}>
+          <div
+            style={{
+              background: 'var(--color-emerald-dim)',
+              border: '1px solid rgba(45, 181, 142, 0.3)',
+              borderRadius: 'var(--radius-sm)',
+              padding: 'var(--spacing-3) var(--spacing-4)',
+              marginBottom: 'var(--spacing-4)',
+              color: 'var(--color-emerald-400)',
+              fontSize: 'var(--font-size-body-sm)',
+              fontWeight: 500,
+              textAlign: 'center',
+            }}
+          >
             {successMsg}
           </div>
         )}
 
+        {/* Form fields */}
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'flex', gap: '0.625rem', justifyContent: 'center', marginBottom: '2rem' }} onPaste={handlePaste}>
-            {otp.map((digit, i) => (
-              <input
-                key={i}
-                ref={el => refs.current[i] = el}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={e => handleChange(i, e.target.value)}
-                onKeyDown={e => handleKeyDown(i, e)}
-                style={{
-                  width: 48, height: 56,
-                  padding: 0,
-                  textAlign: 'center',
-                  fontSize: '1.5rem', fontWeight: 700,
-                  background: 'rgba(255,255,255,0.05)',
-                  border: `2px solid ${digit ? 'var(--color-accent-primary)' : 'var(--color-border)'}`,
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--color-text-primary)',
-                  outline: 'none',
-                  transition: 'border-color 0.15s',
-                }}
-              />
-            ))}
-          </div>
-          <Button type="submit" loading={loading} size="lg" style={{ width: '100%', marginBottom: '1rem' }} disabled={otp.join('').length < 6}>
+          <OTPInput
+            value={otp}
+            onChange={setOtp}
+            disabled={loading}
+          />
+
+          <Button
+            type="submit"
+            loading={loading}
+            size="lg"
+            style={{ width: '100%', marginBottom: 'var(--spacing-4)' }}
+            disabled={otp.join('').length < 6}
+          >
             Verify OTP
           </Button>
         </form>
 
-        <div style={{ marginTop: '1.5rem', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+        {/* Resend actions */}
+        <div
+          style={{
+            marginTop: 'var(--spacing-6)',
+            color: 'var(--color-text-secondary)',
+            fontSize: 'var(--font-size-body-sm)',
+            textAlign: 'center',
+          }}
+        >
           Didn't receive the code?{' '}
           {countdown > 0 ? (
-            <span style={{ color: 'var(--color-text-primary)' }}>Resend in {countdown}s</span>
+            <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
+              Resend in {countdown}s
+            </span>
           ) : (
-            <button 
+            <button
               onClick={handleResend}
               disabled={loading}
-              style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--color-indigo-400)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0,
+                outline: 'none',
+              }}
+              className="hover:text-[var(--color-text-primary)] transition-colors"
             >
               Resend Code
             </button>
           )}
         </div>
       </motion.div>
-    </div>
+    </AuthLayout>
   )
 }
