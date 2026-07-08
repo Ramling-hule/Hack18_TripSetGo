@@ -143,12 +143,16 @@ export default function MapPage() {
     }
   }, [dispatch])
 
-  // Sync geolocated/searched center on map loads
+  // Sync geolocated/searched center on map loads and layout transitions
   useEffect(() => {
-    if (map && mapLoaded) {
+    if (map) {
       map.resize()
+      const timer = setTimeout(() => {
+        map.resize()
+      }, 500)
+      return () => clearTimeout(timer)
     }
-  }, [map, mapLoaded])
+  }, [map, mapLoaded, activePanel, currentTrip])
 
   // Fetch weather forecast when trip or geocode coords change
   const fetchWeather = useCallback(async (destination, lat, lon) => {
@@ -248,7 +252,7 @@ export default function MapPage() {
         map.fitBounds(bounds, {
           padding: isMobile 
             ? { top: 40, bottom: 180, left: 40, right: 40 } 
-            : { top: 60, bottom: 60, left: 420, right: 60 },
+            : { top: 60, bottom: 60, left: 60, right: 420 },
           maxZoom: 14,
           duration: 800
         })
@@ -618,19 +622,161 @@ export default function MapPage() {
   return (
     <div className="flex flex-col lg:flex-row w-full overflow-hidden bg-surface-base text-text-primary" style={{ height: 'calc(100vh - 64px)' }}>
       
-      {/* ── Desktop Split Left Panel / Mobile Bottom Sheet ── */}
+      {/* ── Interactive Map Canvas Container (Left/Middle) ── */}
+      <div className="flex-1 h-full min-w-0 flex flex-col relative overflow-hidden">
+        
+        {/* Floating Mobile Top Selector Header */}
+        {isMobile && (
+          <div className="absolute top-4 left-4 right-4 z-20 flex gap-2 shrink-0 bg-surface-glass border border-border backdrop-blur-md p-3.5 rounded-2xl shadow-lg">
+            <select
+              value={selectedTripId}
+              onChange={e => handleSelectTrip(e.target.value)}
+              className="flex-1 bg-surface-raised border border-border rounded-xl text-text-primary font-sans text-xs px-3.5 py-2 outline-none cursor-pointer appearance-none"
+            >
+              <option value="">-- Choose a Trip --</option>
+              {trips.map(trip => (
+                <option key={trip._id} value={trip._id}>✈️ {trip.destination}</option>
+              ))}
+            </select>
+            
+            {selectedTripId && (
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(99,102,241,0.4)] cursor-pointer whitespace-nowrap"
+              >
+                Show Steps ({activeActivities.length})
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Mapbox Canvas */}
+        <div className="w-full h-full relative">
+          {mapError && (
+            <div className="absolute inset-0 bg-red-950/20 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-50 gap-2">
+              <span className="text-2xl">⚠</span>
+              <p className="text-xs font-bold text-red-400">{mapError}</p>
+              <p className="text-[10px] text-text-muted">Please check your internet connection or browser settings.</p>
+            </div>
+          )}
+
+          <MapContainer ref={mapContainerRef} className="h-full w-full">
+            
+            {/* Sequence markers for current active itinerary day */}
+            {map && mapLoaded && routeCoords.map((coord, idx) => (
+              <MapMarker
+                key={`stop-${idx}`}
+                map={map}
+                coordinates={coord}
+                type="Attraction"
+                data={{
+                  name: `${idx + 1}. ${activeActivities[idx].name}`,
+                  _entityType: 'Attraction',
+                  address: activeActivities[idx].notes,
+                  city: currentTrip?.destination || '',
+                  location: { coordinates: coord }
+                }}
+                onClick={handleMarkerClick}
+              />
+            ))}
+
+            {/* Exploratory nearby pins */}
+            {map && mapLoaded && allMarkers.map((entity) => {
+              const [lng, lat] = entity.location?.coordinates || []
+              if (!lng || !lat) return null
+              
+              // Skip if there's an itinerary stop matching coordinates to prevent duplicate pin overlap
+              const match = routeCoords.some(c => Math.abs(c[0] - lng) < 0.0001 && Math.abs(c[1] - lat) < 0.0001)
+              if (match) return null
+
+              return (
+                <MapMarker
+                  key={entity._id}
+                  map={map}
+                  coordinates={[lng, lat]}
+                  type={entity._entityType}
+                  data={entity}
+                  onClick={handleMarkerClick}
+                />
+              )
+            })}
+
+            {/* Current Selected popup */}
+            {map && mapLoaded && selectedEntity && (
+              <MapPopup
+                map={map}
+                entity={selectedEntity}
+                onClose={handleClosePopup}
+              />
+            )}
+
+            {/* Route layer connecting the current day's stops sequentially */}
+            {map && mapLoaded && routeCoords.length >= 2 && (
+              <RouteLayer
+                mapRef={mapRef}
+                mapLoaded={mapLoaded}
+                coordinates={routeCoords}
+                color="var(--color-indigo-400)"
+              />
+            )}
+
+          </MapContainer>
+        </div>
+
+        {/* Floating Custom Map Controls */}
+        <div className={`absolute bottom-4 left-4 z-20 flex flex-col gap-2 shrink-0 ${isMobile ? 'bottom-20' : ''}`}>
+          
+          {/* Style Toggles */}
+          <div className="flex flex-col bg-surface-glass border border-border backdrop-blur-md p-1.5 rounded-xl shadow-lg gap-1.5">
+            <button
+              onClick={() => changeMapStyle('mapbox://styles/mapbox/dark-v11')}
+              className="p-2 hover:bg-surface-hover rounded-lg transition-colors text-text-primary"
+              title="Dark Mode Map"
+            >
+              🌑
+            </button>
+            <button
+              onClick={() => changeMapStyle('mapbox://styles/mapbox/streets-v12')}
+              className="p-2 hover:bg-surface-hover rounded-lg transition-colors text-text-primary"
+              title="Streets Mode Map"
+            >
+              🗺️
+            </button>
+            <button
+              onClick={() => changeMapStyle('mapbox://styles/mapbox/satellite-v9')}
+              className="p-2 hover:bg-surface-hover rounded-lg transition-colors text-text-primary"
+              title="Satellite Mode Map"
+            >
+              🛰️
+            </button>
+          </div>
+
+          {/* User Locate Trigger */}
+          <button
+            id="btn-locate-me"
+            onClick={requestLocation}
+            className="flex items-center justify-center p-3 bg-surface-glass border border-border backdrop-blur-md text-text-primary rounded-xl shadow-lg hover:bg-surface-hover hover:border-border-interactive transition-all"
+            title="Locate Me"
+          >
+            📍
+          </button>
+        </div>
+
+      </div>
+
+      {/* ── Desktop Split Right Panel / Mobile Bottom Sheet ── */}
       <AnimatePresence>
         {(!isMobile || drawerOpen) && (
           <motion.aside
-            initial={isMobile ? { y: '100%' } : { x: -380, opacity: 0 }}
+            initial={isMobile ? { y: '100%' } : { x: 380, opacity: 0 }}
             animate={isMobile ? { y: 0 } : { x: 0, opacity: 1 }}
-            exit={isMobile ? { y: '100%' } : { x: -380, opacity: 0 }}
+            exit={isMobile ? { y: '100%' } : { x: 380, opacity: 0 }}
             transition={{ type: 'tween', ease: 'easeInOut', duration: 0.25 }}
             className={`
               z-30 flex flex-col bg-surface-glass border-border backdrop-blur-md overflow-hidden shrink-0 shadow-lg
               ${isMobile 
                 ? 'fixed inset-x-0 bottom-0 rounded-t-2xl border-t h-[75vh]' 
-                : 'w-[380px] border-r h-full'
+                : 'w-[380px] border-l h-full'
               }
             `}
           >
@@ -1117,149 +1263,6 @@ export default function MapPage() {
           </motion.aside>
         )}
       </AnimatePresence>
-
-      {/* ── Interactive Map Canvas Container (Right/Full) ── */}
-      <div className="flex-1 h-full min-w-0 flex flex-col relative overflow-hidden">
-        
-        {/* Floating Mobile Top Selector Header */}
-        {isMobile && (
-          <div className="absolute top-4 left-4 right-4 z-20 flex gap-2 shrink-0 bg-surface-glass border border-border backdrop-blur-md p-3.5 rounded-2xl shadow-lg">
-            <select
-              value={selectedTripId}
-              onChange={e => handleSelectTrip(e.target.value)}
-              className="flex-1 bg-surface-raised border border-border rounded-xl text-text-primary font-sans text-xs px-3.5 py-2 outline-none cursor-pointer appearance-none"
-            >
-              <option value="">-- Choose a Trip --</option>
-              {trips.map(trip => (
-                <option key={trip._id} value={trip._id}>✈️ {trip.destination}</option>
-              ))}
-            </select>
-            
-            {selectedTripId && (
-              <button
-                onClick={() => setDrawerOpen(true)}
-                className="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(99,102,241,0.4)] cursor-pointer whitespace-nowrap"
-              >
-                Show Steps ({activeActivities.length})
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Mapbox Canvas */}
-        <div className="w-full h-full relative">
-          {mapError && (
-            <div className="absolute inset-0 bg-red-950/20 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-50 gap-2">
-              <span className="text-2xl">⚠</span>
-              <p className="text-xs font-bold text-red-400">{mapError}</p>
-              <p className="text-[10px] text-text-muted">Please check your internet connection or browser settings.</p>
-            </div>
-          )}
-
-          <MapContainer ref={mapContainerRef} className="h-full w-full">
-            
-            {/* Sequence markers for current active itinerary day */}
-            {map && mapLoaded && routeCoords.map((coord, idx) => (
-              <MapMarker
-                key={`stop-${idx}`}
-                map={map}
-                coordinates={coord}
-                type="Attraction"
-                data={{
-                  name: `${idx + 1}. ${activeActivities[idx].name}`,
-                  _entityType: 'Attraction',
-                  address: activeActivities[idx].notes,
-                  city: currentTrip?.destination || '',
-                  location: { coordinates: coord }
-                }}
-                onClick={handleMarkerClick}
-              />
-            ))}
-
-            {/* Exploratory nearby pins */}
-            {map && mapLoaded && allMarkers.map((entity) => {
-              const [lng, lat] = entity.location?.coordinates || []
-              if (!lng || !lat) return null
-              
-              // Skip if there's an itinerary stop matching coordinates to prevent duplicate pin overlap
-              const match = routeCoords.some(c => Math.abs(c[0] - lng) < 0.0001 && Math.abs(c[1] - lat) < 0.0001)
-              if (match) return null
-
-              return (
-                <MapMarker
-                  key={entity._id}
-                  map={map}
-                  coordinates={[lng, lat]}
-                  type={entity._entityType}
-                  data={entity}
-                  onClick={handleMarkerClick}
-                />
-              )
-            })}
-
-            {/* Current Selected popup */}
-            {map && mapLoaded && selectedEntity && (
-              <MapPopup
-                map={map}
-                entity={selectedEntity}
-                onClose={handleClosePopup}
-              />
-            )}
-
-            {/* Route layer connecting the current day's stops sequentially */}
-            {map && mapLoaded && routeCoords.length >= 2 && (
-              <RouteLayer
-                mapRef={mapRef}
-                mapLoaded={mapLoaded}
-                coordinates={routeCoords}
-                color="var(--color-indigo-400)"
-              />
-            )}
-
-          </MapContainer>
-        </div>
-
-        {/* Floating Custom Map Controls */}
-        <div className={`absolute bottom-4 right-4 z-20 flex flex-col gap-2 shrink-0 ${isMobile ? 'bottom-20' : ''}`}>
-          
-          {/* Style Toggles */}
-          <div className="flex flex-col bg-surface-glass border border-border backdrop-blur-md p-1.5 rounded-xl shadow-lg gap-1.5">
-            <button
-              onClick={() => changeMapStyle('mapbox://styles/mapbox/dark-v11')}
-              className="p-2 hover:bg-surface-hover rounded-lg transition-colors text-text-primary"
-              title="Dark Mode Map"
-            >
-              🌑
-            </button>
-            <button
-              onClick={() => changeMapStyle('mapbox://styles/mapbox/streets-v12')}
-              className="p-2 hover:bg-surface-hover rounded-lg transition-colors text-text-primary"
-              title="Streets Mode Map"
-            >
-              🗺️
-            </button>
-            <button
-              onClick={() => changeMapStyle('mapbox://styles/mapbox/satellite-v9')}
-              className="p-2 hover:bg-surface-hover rounded-lg transition-colors text-text-primary"
-              title="Satellite Mode Map"
-            >
-              🛰️
-            </button>
-          </div>
-
-          {/* User Locate Trigger */}
-          <button
-            id="btn-locate-me"
-            onClick={requestLocation}
-            className="flex items-center justify-center p-3 bg-surface-glass border border-border backdrop-blur-md text-text-primary rounded-xl shadow-lg hover:bg-surface-hover hover:border-border-interactive transition-all"
-            title="Locate Me"
-          >
-            📍
-          </button>
-        </div>
-
-      </div>
-
     </div>
   )
 }

@@ -33,7 +33,7 @@ export default function DashboardLayout() {
         <main
           className="flex-1 ml-0 md:ml-[var(--layout-sidebar-width)] overflow-x-hidden"
           style={{
-            padding: 'var(--spacing-8)',
+            padding: ['/dashboard/map', '/dashboard/copilot'].includes(location.pathname) ? '0' : 'var(--spacing-8)',
             minHeight: 'calc(100vh - var(--layout-navbar-height))',
           }}
         >
