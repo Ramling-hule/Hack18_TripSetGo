@@ -60,7 +60,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
         })
         // Retry the original query (prepareHeaders will automatically run again and fetch the new token)
         result = await baseQuery(args, api, extraOptions)
-      } catch (err) {
+      } catch {
         return result
       }
     } else {

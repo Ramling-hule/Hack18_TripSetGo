@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 import { Plus, Trash2, Clock } from 'lucide-react'
 

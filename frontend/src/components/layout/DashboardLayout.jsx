@@ -22,7 +22,7 @@ export default function DashboardLayout() {
 
       {/* Mobile backdrop */}
       {sidebarOpen && (
-        <div className="fixed inset-0 top-16 bg-black/60 z-49 backdrop-blur-[2px] md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 top-16 bg-black/60 z-[49] backdrop-blur-[2px] md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <div className="flex pt-16">

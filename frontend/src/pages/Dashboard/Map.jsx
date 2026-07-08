@@ -121,11 +121,7 @@ export default function MapPage() {
   const fetchIdRef = useRef(0)
 
   useEffect(() => {
-    if (!userLocation) {
-      setEntities({ hotels: [], restaurants: [], attractions: [] })
-      setErrors({ hotels: null, restaurants: null, attractions: null })
-      return
-    }
+    if (!userLocation) return
 
     const [lng, lat] = userLocation
     const radiusM = radius * 1000 // convert km → meters for the API
@@ -248,8 +244,6 @@ export default function MapPage() {
     entities.attractions?.[0]?.location?.coordinates,
   ].filter(Boolean)
 
-  const totalFound = (entities.hotels?.length || 0) + (entities.restaurants?.length || 0) + (entities.attractions?.length || 0)
-  
   const activeList = activeTab === 'Hotel'
     ? entities.hotels
     : activeTab === 'Restaurant'

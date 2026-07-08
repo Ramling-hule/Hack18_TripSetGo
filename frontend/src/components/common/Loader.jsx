@@ -1,20 +1,35 @@
 // src/components/common/Loader.jsx
 export default function Loader({ size = 'md', fullScreen = false, text }) {
-  const sizes = { sm: 20, md: 36, lg: 56 }
-  const px = sizes[size] || 36
+  const sizes = { sm: 24, md: 48, lg: 72 }
+  const px = sizes[size] || 48
 
   const spinner = (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-      <div
-        className="animate-spin"
-        style={{
-          width: px, height: px,
-          border: `${size === 'sm' ? 2 : 3}px solid rgba(99,102,241,0.2)`,
-          borderTopColor: 'var(--color-accent-primary)',
-          borderRadius: '50%',
-        }}
-      />
-      {text && <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>{text}</p>}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
+      <div className="relative flex items-center justify-center">
+        <div 
+          className="absolute inset-0 rounded-full animate-pulse-slow" 
+          style={{ background: 'rgba(14, 165, 233, 0.2)', filter: 'blur(10px)', transform: 'scale(1.2)' }}
+        />
+        <div 
+          style={{
+            width: px, height: px,
+            borderRadius: '50%',
+            background: 'var(--gradient-primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'var(--shadow-glow)',
+            position: 'relative',
+            zIndex: 1,
+            animation: 'pulseSlow 2s ease-in-out infinite'
+          }}
+        >
+          <img 
+            src="/favicon.svg" 
+            style={{ width: px * 0.5, height: px * 0.5, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} 
+            alt="Loading..." 
+          />
+        </div>
+      </div>
+      {text && <p style={{ color: 'var(--color-text-primary)', fontSize: '0.95rem', fontWeight: 600, letterSpacing: '0.02em', animation: 'pulseSlow 2s ease-in-out infinite' }}>{text}</p>}
     </div>
   )
 
@@ -23,14 +38,14 @@ export default function Loader({ size = 'md', fullScreen = false, text }) {
       <div style={{
         position: 'fixed', inset: 0, zIndex: 2000,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(10,15,30,0.85)', backdropFilter: 'blur(8px)',
+        background: 'rgba(8, 15, 30, 0.9)', backdropFilter: 'blur(12px)',
       }}>
         {spinner}
       </div>
     )
   }
 
-  return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>{spinner}</div>
+  return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '3rem 2rem' }}>{spinner}</div>
 }
 
 export function SkeletonCard() {

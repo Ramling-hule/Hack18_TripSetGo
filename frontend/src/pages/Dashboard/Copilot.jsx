@@ -1,4 +1,4 @@
-﻿// src/pages/Dashboard/Copilot.jsx
+// src/pages/Dashboard/Copilot.jsx
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -23,15 +23,24 @@ function Bubble({ role, text, streaming }) {
       style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start', marginBottom: '0.875rem' }}>
       <div style={{
         maxWidth: '80%',
-        padding: '0.75rem 1rem',
+        padding: '0.75rem 1.25rem',
         borderRadius: 'var(--radius-lg)',
         background: isUser ? 'var(--gradient-primary)' : 'var(--color-bg-card)',
         border: isUser ? 'none' : '1px solid var(--color-border)',
         color: isUser ? 'white' : 'var(--color-text-primary)',
-        fontSize: '0.9rem', lineHeight: 1.6,
+        fontSize: '0.95rem', lineHeight: 1.6,
         whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+        boxShadow: isUser ? 'var(--shadow-btn)' : 'var(--shadow-card)'
       }}>
-        {text || (streaming ? <span className="animate-pulse-slow" style={{ color: 'var(--color-text-muted)' }}>Thinking...</span> : '')}
+        {text ? text : (
+          streaming && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0', minHeight: '1.5rem' }}>
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+            </div>
+          )
+        )}
       </div>
     </motion.div>
   )
@@ -174,15 +183,20 @@ export default function Copilot() {
             const active = c._id === convId
             return (
               <button key={c._id} onClick={() => openConversation(c._id)}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border transition-all" style={{
+                className="inline-flex items-center gap-2 rounded-lg border transition-all" style={{
                   background: active ? 'rgba(129,140,248,0.15)' : 'transparent',
                   borderColor: active ? 'var(--color-accent-primary)' : 'var(--color-border)',
-                  color: 'var(--color-text-secondary)', maxWidth: 200,
+                  color: 'var(--color-text-secondary)',
                 }}>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {c.tripId?.destination ? `✈️ ${c.tripId.destination}` : (c.lastMessage?.text?.slice(0, 24) || 'New conversation')}
-                </span>
-                <Trash2 size={12} onClick={(e) => deleteConv(c._id, e)} style={{ flexShrink: 0, opacity: 0.6 }} />
+                  <div style={{ padding: '0.625rem 0.875rem' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.title || (c.tripId ? 'Trip Planning' : `Conversation ${c._id.slice(-4)}`)}
+                    </div>
+                    <div style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
+                      {new Date(c.updatedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                <Trash2 size={12} onClick={(e) => deleteConv(c._id, e)} style={{ flexShrink: 0, opacity: 0.6, marginRight: '0.75rem' }} />
               </button>
             )
           })}
@@ -192,17 +206,33 @@ export default function Copilot() {
       {/* Messages */}
       <div ref={scrollRef} className="bg-bg-card border border-border rounded-xl p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', marginBottom: '1rem' }}>
         {messages.length === 0 ? (
-          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-            <Sparkles size={40} style={{ marginBottom: '1rem', color: 'var(--color-accent-primary)' }} />
-            <p style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--color-text-secondary)' }}>How can I help with your travels?</p>
-            <p style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>Try one of these:</p>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 520 }}>
-              {SUGGESTIONS.map((s) => (
-                <button key={s} onClick={() => send(s)} className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border border-border hover:border-primary hover:bg-primary/10 transition-all" style={{ fontWeight: 500 }}>{s}</button>
-              ))}
-            </div>
-          </div>
-        ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-secondary)', padding: '2rem' }}>
+                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, ease: 'easeOut' }}
+                      style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                      <Sparkles size={28} className="text-accent-tertiary animate-glow" />
+                    </motion.div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-text-primary)' }}>Your AI Travel Copilot</h3>
+                    <p style={{ textAlign: 'center', maxWidth: 360, marginBottom: '2.5rem', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                      Ask me to plan an itinerary, suggest restaurants, or find hidden gems at your destination.
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', maxWidth: 600 }}>
+                      {SUGGESTIONS.map((s, i) => (
+                        <motion.button key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
+                          onClick={() => send(s)}
+                          style={{
+                            padding: '0.75rem 1.25rem', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '99px',
+                            color: 'var(--color-text-primary)', fontSize: '0.875rem', cursor: 'pointer', transition: 'all var(--transition-fast)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-accent-tertiary)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'none' }}
+                        >
+                          {s}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
           messages.map((m, i) => (
             <Bubble key={i} role={m.role} text={m.text} streaming={streaming && i === messages.length - 1} />
           ))

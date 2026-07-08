@@ -8,7 +8,7 @@ export const tripsApi = apiSlice.injectEndpoints({
         params: { page, limit },
       }),
       providesTags: (result) =>
-        result
+        result?.trips
           ? [
               ...result.trips.map(({ _id }) => ({ type: 'Trip', id: _id })),
               { type: 'Trip', id: 'LIST' },

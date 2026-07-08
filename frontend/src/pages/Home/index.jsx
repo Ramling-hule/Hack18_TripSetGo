@@ -1,7 +1,7 @@
 // src/pages/Home/index.jsx
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Map, Sparkles, Users, Star, Wallet, Camera, MapPin, Compass, TrendingUp } from 'lucide-react'
+import { ArrowRight, Map, Sparkles, Users, Star, Wallet, Camera, Compass, TrendingUp } from 'lucide-react'
 import Navbar from '@/components/layout/Navbar'
 
 const heroFeatures = [
@@ -119,7 +119,7 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            style={{ position: 'relative', width: '100%', height: '440px', display: 'flex', alignItems: 'center', justifycontent: 'center' }}
+            style={{ position: 'relative', width: '100%', height: '440px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             {/* Main Interactive Scenic Frame */}
             <div className="bg-bg-card border border-border rounded-xl p-6 transition-all duration-250 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" style={{
@@ -150,10 +150,9 @@ export default function Home() {
 
               {/* Map/Travel Coordinates Overlay UI */}
               <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', zIndex: 10, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <span className="inline-flex items-center gap-1 text-[0.75rem] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider border bg-indigo-500/20 text-indigo-300 border-indigo-500/30" style={{ background: 'rgba(14, 165, 233, 0.2)', backdropFilter: 'blur(8px)', textTransform: 'none', border: '1px solid rgba(14, 165, 233, 0.3)' }}>
-                  📍 Active Router: TSG-V4
+                <span style={{ background: 'rgba(14, 165, 233, 0.2)', backdropFilter: 'blur(8px)', textTransform: 'none', border: '1px solid rgba(14, 165, 233, 0.3)', borderRadius: 'var(--radius-md)', padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                  ✦ Gemini 2.5 Flash
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>Mapbox Engine</span>
               </div>
 
               {/* Flight Path SVG */}
@@ -512,7 +511,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid var(--color-border)', padding: '2.5rem 2rem', background: '#070d1a' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifycontent: 'space-between', gap: '1.5rem' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: 20 }}>✈️</span>
             <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: '1.15rem' }}>

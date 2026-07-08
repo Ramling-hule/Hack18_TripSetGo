@@ -1,7 +1,7 @@
 // src/components/common/Button.jsx
 const sizeMap = {
   sm: 'px-[0.875rem] py-[0.375rem] text-[0.8125rem]',
-  md: '',
+  md: 'px-5 py-2.5 text-sm',
   lg: 'px-[1.75rem] py-[0.875rem] text-base rounded-lg',
 }
 const variantMap = {

@@ -5,12 +5,13 @@ import { selectUser, logout } from '@/features/auth/authSlice'
 import {
   LayoutDashboard, Map, Compass, Briefcase,
   Receipt, BarChart3, CreditCard, Bell, User, MapPin,
-  Users, MessageSquare, Terminal, LogOut, Globe
+  Users, MessageSquare, Terminal, LogOut, Globe, Sparkles
 } from 'lucide-react'
 
 const navItems = [
   { icon: <LayoutDashboard size={18} />, label: 'Dashboard',    to: '/dashboard' },
   { icon: <Map size={18} />,             label: 'Plan a Trip',  to: '/dashboard/planner' },
+  { icon: <Sparkles size={18} />,        label: 'AI Copilot',   to: '/dashboard/copilot' },
   { icon: <Compass size={18} />,         label: 'Discover',     to: '/dashboard/discover' },
   { icon: <Globe size={18} />,           label: 'Explore Hub',  to: '/dashboard/explore' },
   { icon: <Briefcase size={18} />,       label: 'My Trips',     to: '/dashboard/trips' },

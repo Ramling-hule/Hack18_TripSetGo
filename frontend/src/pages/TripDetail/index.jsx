@@ -2,8 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Calendar, Users, DollarSign, Heart, Copy, UserPlus, Plus, Trash2, X, Globe, Lock, Clock, MapPin, CloudRain, Hotel, Navigation } from 'lucide-react'
+// No motion/icons needed at root level if unused
 import { selectUser } from '@/features/auth/authSlice'
 import { useTripCollaboration } from '@/hooks/useTripCollaboration'
 import api from '@/services/api'
@@ -14,13 +13,7 @@ import TripItinerary from './components/TripItinerary'
 import { CollaboratorsList, BudgetBreakdown, LiveWeather, LiveHotels, TopAttractions, AITips } from './components/TripWidgets'
 import InviteModal from './components/InviteModal'
 
-function InfoChip({ icon, label }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--color-text-secondary)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.3rem 0.75rem' }}>
-      {icon}{label}
-    </span>
-  )
-}
+
 
 export default function TripDetail() {
   const { id }            = useParams()

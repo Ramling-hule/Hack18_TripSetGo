@@ -14,7 +14,7 @@ export default function ForgotPassword() {
   const loading  = useSelector(selectAuthLoading)
   const error    = useSelector(selectAuthError)
   const [email, setEmail] = useState('')
-  const [sent, setSent]   = useState(false)
+  const [sent]   = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
