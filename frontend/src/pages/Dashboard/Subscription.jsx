@@ -1,11 +1,13 @@
 // src/pages/Dashboard/Subscription.jsx
+// TripSetGo — Subscription Conversion Workspace
+// Features premium billing cards, Razorpay secure order dialogs, daily usage trackers, benefits showcases, and FAQ accordions.
 import { useEffect, useState, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Check, Zap, Crown, HelpCircle, ChevronDown, ChevronUp,
   CreditCard, Shield, Clock, History, Loader2,
-  CheckCircle2, AlertCircle, RefreshCw,
+  CheckCircle2, AlertCircle, RefreshCw, Compass, Map, DollarSign, Sparkles, Download
 } from 'lucide-react'
 import {
   fetchSubscriptionStatus,
@@ -20,7 +22,6 @@ import {
 } from '@/features/subscription/subscriptionSlice'
 import Badge from '@/components/common/Badge'
 
-// ── Static fallback plans (shown while API loads) ─────────────────────────────
 const PLANS_FALLBACK = [
   {
     id: 'free', name: 'Free', price: 0, period: 'forever',
@@ -55,7 +56,7 @@ const FAQS = [
   },
   {
     q: 'Are payments secure?',
-    a: 'Yes. All payments are processed by Razorpay — a PCI-DSS Level 1 certified payment gateway. We never store your card information on our servers.',
+    a: 'Yes. All payments are processed secure by Razorpay — a PCI-DSS Level 1 certified payment gateway. We never store your card information on our servers.',
   },
   {
     q: 'What if my browser closed during payment?',
@@ -63,14 +64,13 @@ const FAQS = [
   },
 ]
 
-// ── Payment processing overlay ────────────────────────────────────────────────
 function PaymentOverlay ({ stage }) {
   const stages = {
-    creating:  { icon: <Loader2 size={40} className="animate-spin" color="var(--color-primary)" />, text: 'Creating secure order…' },
-    checkout:  { icon: <CreditCard size={40} color="var(--color-primary)" />,                       text: 'Opening payment window…' },
-    verifying: { icon: <Shield size={40} color="var(--color-secondary)" />,                         text: 'Verifying payment…' },
-    success:   { icon: <CheckCircle2 size={40} color="#22c55e" />,                                  text: 'Payment successful! 🎉' },
-    error:     { icon: <AlertCircle size={40} color="var(--color-accent-red)" />,                    text: 'Payment failed' },
+    creating:  { icon: <Loader2 size={36} className="animate-spin text-indigo-400" />, text: 'Creating secure order…' },
+    checkout:  { icon: <CreditCard size={36} className="text-indigo-400" />,           text: 'Opening payment window…' },
+    verifying: { icon: <Shield size={36} className="text-indigo-400" />,               text: 'Verifying payment…' },
+    success:   { icon: <CheckCircle2 size={36} className="text-emerald-400" />,        text: 'Payment successful! 🎉' },
+    error:     { icon: <AlertCircle size={36} className="text-rose-400" />,            text: 'Payment failed' },
   }
 
   const { icon, text } = stages[stage] || stages.creating
@@ -80,22 +80,17 @@ function PaymentOverlay ({ stage }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1999,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(8, 17, 34, 0.88)', backdropFilter: 'blur(12px)',
-        gap: '1rem',
-      }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-surface-base/90 backdrop-blur-md gap-4"
     >
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
+        initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', damping: 18, stiffness: 250 }}
-        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
+        transition={{ duration: 0.15 }}
+        className="flex flex-col items-center gap-3.5"
       >
         {icon}
-        <p style={{ color: 'var(--color-text-primary)', fontWeight: 700, fontSize: '1.1rem' }}>{text}</p>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
+        <p className="text-sm font-bold text-text-primary">{text}</p>
+        <p className="text-[10px] text-text-secondary">
           {stage === 'verifying' ? 'This takes just a moment' : 'Please do not close this window'}
         </p>
       </motion.div>
@@ -103,49 +98,39 @@ function PaymentOverlay ({ stage }) {
   )
 }
 
-// ── Payment history row ───────────────────────────────────────────────────────
 function PaymentHistoryRow ({ payment }) {
   const statusColors = {
-    captured: '#22c55e',
-    failed:   'var(--color-accent-red)',
-    pending:  'var(--color-accent-amber)',
-    refunded: 'var(--color-text-muted)',
+    captured: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15',
+    failed:   'text-rose-400 bg-rose-500/10 border-rose-500/15',
+    pending:  'text-amber-400 bg-amber-500/10 border-amber-500/15',
+    refunded: 'text-text-muted bg-surface-raised border-border/10',
   }
 
   return (
-    <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '0.875rem 1.25rem',
-      borderBottom: '1px solid rgba(255,255,255,0.04)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <div style={{
-          width: 8, height: 8, borderRadius: '50%',
-          background: statusColors[payment.status] || 'gray',
-          boxShadow: `0 0 6px ${statusColors[payment.status] || 'gray'}`,
-        }} />
-        <div>
-          <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+    <div className="flex justify-between items-center p-3.5 border-b border-border/10 text-xs gap-3">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className={`w-2 h-2 rounded-full shrink-0 ${payment.status === 'captured' ? 'bg-emerald-500' : payment.status === 'failed' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+        <div className="min-w-0">
+          <p className="font-bold text-text-primary truncate">
             {payment.planId === 'pro' ? 'Pro Plan — Monthly' : payment.planId}
           </p>
-          <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+          <p className="text-[9px] text-text-muted mt-0.5 font-medium">
             {new Date(payment.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
           </p>
         </div>
       </div>
-      <div style={{ textAlign: 'right' }}>
-        <p style={{ fontWeight: 700, fontSize: '0.9rem' }}>
+      <div className="text-right shrink-0">
+        <p className="font-extrabold text-text-primary">
           ₹{((payment.amount || 0) / 100).toFixed(0)}
         </p>
-        <p style={{ fontSize: '0.7rem', color: statusColors[payment.status], textTransform: 'capitalize', fontWeight: 600 }}>
+        <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded border mt-0.5 inline-block ${statusColors[payment.status] || statusColors.pending}`}>
           {payment.status}
-        </p>
+        </span>
       </div>
     </div>
   )
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
 export default function Subscription () {
   const dispatch      = useDispatch()
   const subscription  = useSelector(selectSubscription)
@@ -162,29 +147,22 @@ export default function Subscription () {
 
   const plans = subscription.plans.length ? subscription.plans : PLANS_FALLBACK
 
-  // ── Razorpay guard ─────────────────────────────────────────────────────────
   const isRazorpayLoaded = () => typeof window !== 'undefined' && typeof window.Razorpay === 'function'
 
-  // ── Toast helper ───────────────────────────────────────────────────────────
   const toast = useCallback((type, message) => {
     window.dispatchEvent(new CustomEvent('toast', { detail: { type, message } }))
   }, [])
 
-  // ── Main upgrade flow ──────────────────────────────────────────────────────
   const handleUpgrade = async (planId) => {
-    // Guard: Razorpay SDK must be loaded
     if (!isRazorpayLoaded()) {
       toast('error', 'Payment system not available. Please refresh the page and try again.')
       return
     }
 
-    // Guard: prevent double-click if already processing
     if (isOrdering || isVerifying || paymentStage) return
-
     dispatch(clearError())
 
     try {
-      // Step 1 — Create a Razorpay order via backend
       setPaymentStage('creating')
       const orderAction = await dispatch(createOrder(planId))
 
@@ -197,8 +175,6 @@ export default function Subscription () {
       }
 
       const { orderId, amount, currency } = orderAction.payload
-
-      // Step 2 — Open Razorpay checkout modal
       setPaymentStage('checkout')
 
       await new Promise((resolve, reject) => {
@@ -214,12 +190,10 @@ export default function Subscription () {
             name:  '',
             email: '',
           },
-          theme: { color: '#0EA5E9' },
+          theme: { color: '#6366f1' },
 
-          // ── Payment success handler ──────────────────────────────────────
           handler: async (response) => {
             try {
-              // Step 3 — Verify the payment signature on the backend
               setPaymentStage('verifying')
               const verifyAction = await dispatch(verifyPayment({
                 razorpay_order_id:   response.razorpay_order_id,
@@ -237,10 +211,9 @@ export default function Subscription () {
                 return
               }
 
-              // Step 4 — Success!
               setPaymentStage('success')
               toast('success', '🎉 Welcome to Pro! Your subscription is now active.')
-              dispatch(fetchSubscriptionStatus())  // Refresh from server
+              dispatch(fetchSubscriptionStatus())
               setTimeout(() => setPaymentStage(null), 2500)
               resolve()
             } catch (err) {
@@ -251,12 +224,11 @@ export default function Subscription () {
             }
           },
 
-          // ── Modal closed without payment ─────────────────────────────────
           modal: {
             ondismiss: () => {
               setPaymentStage(null)
               toast('info', 'Payment cancelled. You can try again whenever you\'re ready.')
-              resolve()  // Resolve (not reject) — user intentionally dismissed
+              resolve()
             },
             confirm_close: true,
           },
@@ -264,20 +236,18 @@ export default function Subscription () {
 
         const rzp = new window.Razorpay(options)
 
-        // ── Razorpay-level payment failure ────────────────────────────────
         rzp.on('payment.failed', (response) => {
           const reason = response.error?.description || 'Payment was declined'
           toast('error', `Payment failed: ${reason}`)
           setPaymentStage('error')
           setTimeout(() => setPaymentStage(null), 3000)
-          resolve()  // Resolve so the outer promise chain doesn't hang
+          resolve()
         })
 
         rzp.open()
       })
 
     } catch (err) {
-      // Catch any unexpected errors
       console.error('[Subscription] Upgrade failed:', err)
       if (paymentStage !== 'success') {
         toast('error', 'An unexpected error occurred. Please try again.')
@@ -298,56 +268,50 @@ export default function Subscription () {
 
   return (
     <>
-      {/* Payment Processing Overlay */}
       <AnimatePresence>
         {paymentStage && <PaymentOverlay key="overlay" stage={paymentStage} />}
       </AnimatePresence>
 
-      <div className="animate-fadeIn max-w-[1000px] mx-auto pb-16">
-
-        {/* ── Visual Header ── */}
-        <div className="text-center mb-14 relative">
-          {/* Glow */}
-          <div className="absolute top-[-50%] left-1/2 -translate-x-1/2 w-[300px] h-[200px] bg-[radial-gradient(circle,rgba(14,165,233,0.15)_0%,transparent_70%)] blur-[40px] pointer-events-none z-0" />
-
-          <h1 className="text-4xl font-black mb-3 font-['Plus_Jakarta_Sans',sans-serif] z-10 relative">
-            Choose Your Perfect{' '}
-            <span className="bg-gradient-primary bg-clip-text text-transparent">Adventure Plan</span>
+      <div className="animate-fadeIn max-w-5xl mx-auto px-4 md:px-6 py-4 flex flex-col gap-8">
+        
+        {/* Page Header */}
+        <div className="text-center py-6 flex flex-col items-center gap-2">
+          <h1 className="text-3xl font-extrabold text-text-primary font-display tracking-tight leading-tight">
+            Choose Your Perfect <span className="text-indigo-400">Adventure Plan</span>
           </h1>
-          <p className="text-text-secondary text-base max-w-[500px] mx-auto z-10 relative">
-            Unlock Gemini-powered itineraries, interactive route maps, and real-time group expense splitting.
+          <p className="text-xs text-text-secondary max-w-md">
+            Unlock Gemini-powered itineraries, Mapbox routing lines, and collaborative group expense trackers.
           </p>
 
           {isPro && (
-            <div className="mt-5 z-10 relative flex flex-col items-center gap-2">
+            <div className="mt-4 flex flex-col items-center gap-1.5 animate-fadeIn">
               <Badge label="✓ Pro Tier Active" variant="green" />
               {subscription.endDate && (
-                <p className="text-xs text-text-muted">
-                  <Clock size={12} className="inline mr-1" />
-                  Renews on {new Date(subscription.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                <p className="text-[10px] text-text-muted flex items-center gap-1 font-medium">
+                  <Clock size={11} /> Renews on {new Date(subscription.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               )}
             </div>
           )}
         </div>
 
-        {/* ── Usage Tracker ── */}
+        {/* Usage Tracker Progress Container */}
         {subscription.usage && (
-          <div className="bg-bg-glass backdrop-blur-[20px] border border-border max-w-[540px] mx-auto mb-16 p-6 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.35)] bg-[rgba(17,24,39,0.7)]">
-            <div className="flex justify-between items-center mb-3">
+          <div className="bg-surface-default border border-border/40 rounded-2xl p-5 max-w-xl mx-auto w-full shadow-sm flex flex-col gap-2.5">
+            <div className="flex justify-between items-center text-xs">
               <div>
-                <p className="font-extrabold text-[0.95rem] m-0">Today's Usage</p>
-                <p className="text-xs text-text-secondary m-0">Daily AI trip plan generations</p>
+                <p className="font-bold text-text-primary">Today's Usage</p>
+                <p className="text-[10px] text-text-muted mt-0.5">Daily AI trip plan generations capacity</p>
               </div>
-              <span className="font-extrabold text-base text-primary">
+              <span className="font-extrabold text-indigo-400 font-display">
                 {subscription.usage.searchesToday}
                 <span className="text-text-muted font-normal"> / {subscription.usage.searchLimit >= 9999 ? '∞' : subscription.usage.searchLimit}</span>
               </span>
             </div>
 
-            <div className="h-2 bg-[rgba(255,255,255,0.05)] rounded-full overflow-hidden relative border border-[rgba(255,255,255,0.03)]">
+            <div className="h-2 bg-surface-raised rounded-full overflow-hidden border border-border/10">
               <div
-                className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-[width] duration-600 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_0_10px_var(--primary)]"
+                className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-500"
                 style={{
                   width: subscription.usage.searchLimit >= 9999
                     ? '100%'
@@ -358,8 +322,8 @@ export default function Subscription () {
           </div>
         )}
 
-        {/* ── Pricing Cards ── */}
-        <div className="flex gap-8 justify-center flex-wrap mb-16">
+        {/* Pricing Cards Grid */}
+        <div className="flex gap-6 justify-center flex-wrap">
           {plans.map((plan, i) => {
             const isPlanPro = plan.id === 'pro'
             const isCurrentPlan = subscription.plan === plan.id && (plan.id === 'free' || subscription.isActive)
@@ -368,97 +332,82 @@ export default function Subscription () {
             return (
               <motion.div
                 key={plan.id}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.6 }}
-                className={`w-[340px] rounded-3xl py-10 px-8 relative overflow-hidden flex flex-col justify-between transition-all duration-250 ease-out hover:-translate-y-1 hover:border-primary ${
-                  isPlanPro
-                    ? 'bg-[rgba(17,24,39,0.8)] border border-primary shadow-[0_0_35px_rgba(14,165,233,0.15),inset_0_1px_0_rgba(255,255,255,0.15)]'
-                    : 'bg-bg-card border border-[rgba(255,255,255,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
-                }`}
+                transition={{ delay: i * 0.08, duration: 0.4 }}
+                className={`
+                  w-[310px] rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between transition-all
+                  ${isPlanPro
+                    ? 'bg-surface-default border-2 border-indigo-500/50 shadow-md shadow-indigo-500/5'
+                    : 'bg-surface-default border border-border/40 shadow-sm'
+                  }
+                `}
               >
-                {/* SVG watermark */}
+                {/* RECOMMENDED Badge overlay */}
                 {isPlanPro && (
-                  <svg className="absolute top-0 right-0 w-[150px] h-[150px] opacity-15 pointer-events-none z-0" viewBox="0 0 100 100" fill="none">
-                    <path d="M10,80 Q50,20 90,80" stroke="var(--primary)" strokeWidth="2" strokeDasharray="3 3" fill="none" />
-                    <text x="45" y="45" fill="var(--primary)" fontSize="10">✈</text>
-                  </svg>
-                )}
-
-                {/* RECOMMENDED badge */}
-                {isPlanPro && (
-                  <div className="absolute top-4 right-4 bg-gradient-to-br from-primary to-accent py-1 px-3 rounded-full text-[0.65rem] font-extrabold text-white tracking-wider flex items-center gap-1 z-10">
-                    <span className="w-[5px] h-[5px] rounded-full bg-white inline-block shadow-[0_0_6px_white] animate-pulse" />
+                  <div className="absolute top-3.5 right-3.5 bg-indigo-500 text-white text-[8px] font-extrabold px-2 py-0.5 rounded-full tracking-wider shrink-0 flex items-center gap-0.5">
                     RECOMMENDED
                   </div>
                 )}
 
-                <div className="z-10">
-                  {/* Header */}
-                  <div className="flex items-center gap-2 mb-5">
+                <div className="flex flex-col gap-4">
+                  {/* Card Header Title */}
+                  <div className="flex items-center gap-2">
                     {isPlanPro
-                      ? <Crown size={22} color="#f59e0b" style={{ filter: 'drop-shadow(0 0 6px rgba(245,158,11,0.4))' }} />
-                      : <Zap size={22} color="var(--primary)" />
+                      ? <Crown size={18} className="text-amber-400" />
+                      : <Zap size={18} className="text-indigo-400" />
                     }
-                    <h2 className="font-extrabold text-[1.35rem] m-0">{plan.name}</h2>
+                    <h2 className="font-extrabold text-sm text-text-primary font-display leading-tight">{plan.name}</h2>
                   </div>
 
-                  {/* Price */}
-                  <div className="mb-8">
-                    <span className="text-[3rem] font-black tracking-tight text-white">
+                  {/* Plan Price */}
+                  <div>
+                    <span className="text-3xl font-extrabold text-text-primary font-display tracking-tight leading-none">
                       {priceInRupees === 0 ? 'Free' : `₹${priceInRupees}`}
                     </span>
                     {priceInRupees > 0 && (
-                      <span className="text-text-secondary text-sm ml-1">/{plan.period}</span>
-                    )}
-                    {isPlanPro && (
-                      <p className="text-primary text-[0.75rem] font-bold mt-1 mb-0">
-                        🔥 Limited time offer — best value
-                      </p>
+                      <span className="text-text-secondary text-xs ml-1">/{plan.period}</span>
                     )}
                   </div>
 
-                  <div className="h-[1px] bg-border my-0 mb-6" />
+                  <hr className="border-border/10 my-1" />
 
-                  {/* Features */}
-                  <ul className="list-none flex flex-col gap-3 mb-10 p-0">
+                  {/* Features list checks */}
+                  <ul className="flex flex-col gap-2.5 text-xs">
                     {plan.features.map(f => (
-                      <li key={f} className="flex items-center gap-2.5 text-sm text-text-secondary">
-                        <Check size={15} color="var(--secondary)" className="flex-shrink-0" /> {f}
+                      <li key={f} className="flex items-center gap-2 text-text-secondary font-medium leading-tight">
+                        <Check size={13} className="text-indigo-400 shrink-0" /> {f}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* CTA Button */}
+                {/* Card CTA Trigger Action Button */}
                 <button
                   id={`plan-btn-${plan.id}`}
-                  type="button"
                   disabled={isCurrentPlan || isPlanBusy}
                   onClick={() => !isCurrentPlan && plan.id !== 'free' && handleUpgrade(plan.id)}
                   aria-label={isCurrentPlan ? 'Current plan' : `Upgrade to ${plan.name}`}
-                  className={`w-full py-4 px-7 text-[0.95rem] font-bold rounded-2xl inline-flex items-center justify-center gap-2 transition-all duration-250 ease-out outline-none z-10 ${
-                    isCurrentPlan
-                      ? 'bg-[rgba(255,255,255,0.05)] text-text-muted cursor-not-allowed opacity-50 border border-solid border-[rgba(255,255,255,0.08)]'
-                      : isPlanBusy && isPlanPro
-                        ? 'bg-gradient-to-r from-primary via-secondary to-accent text-white border-none cursor-not-allowed opacity-70'
-                        : isPlanPro
-                          ? 'bg-gradient-to-r from-primary via-secondary to-accent text-white shadow-[0_4px_14px_0_rgba(14,165,233,0.3)] border-none cursor-pointer opacity-100 hover:-translate-y-[2px] hover:scale-[1.02] hover:brightness-110 active:translate-y-0 active:scale-[0.98]'
-                          : 'bg-transparent text-white border border-solid border-border cursor-not-allowed opacity-50'
-                  }`}
+                  className={`
+                    w-full py-3 px-4 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all mt-6 cursor-pointer
+                    ${isCurrentPlan
+                      ? 'bg-surface-raised text-text-muted cursor-not-allowed border border-border/10'
+                      : isPlanPro
+                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/10'
+                        : 'bg-surface-raised border border-border/20 text-text-secondary hover:bg-surface-hover'
+                    }
+                  `}
                 >
                   {isCurrentPlan && '✓ Current Plan'}
-                  {!isCurrentPlan && plan.id === 'free' && 'Free Plan'}
+                  {!isCurrentPlan && plan.id === 'free' && 'Free Tier'}
                   {!isCurrentPlan && isPlanPro && !isPlanBusy && (
                     <>
-                      <CreditCard size={16} />
-                      Upgrade to Pro
+                      <CreditCard size={13} /> Upgrade to Pro
                     </>
                   )}
                   {!isCurrentPlan && isPlanPro && isPlanBusy && (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Processing…
+                      <Loader2 size={13} className="animate-spin" /> Processing…
                     </>
                   )}
                 </button>
@@ -467,32 +416,47 @@ export default function Subscription () {
           })}
         </div>
 
-        {/* ── Trust Indicators ── */}
-        <div className="flex gap-6 justify-center flex-wrap mb-16">
-          {[
-            { icon: <Shield size={16} />, text: 'SSL Encrypted Checkout' },
-            { icon: <CreditCard size={16} />, text: 'Razorpay Secured — PCI DSS L1' },
-            { icon: <RefreshCw size={16} />, text: 'Cancel Anytime' },
-          ].map(({ icon, text }) => (
-            <div key={text} className="flex items-center gap-2 text-text-muted text-xs font-medium">
-              {icon} {text}
-            </div>
-          ))}
+        {/* Visual Showcase Grid detailing Pro benefits */}
+        <div className="border-t border-border/20 pt-8 flex flex-col gap-5">
+          <h3 className="text-xs font-extrabold text-text-primary font-display uppercase tracking-wider pl-1 flex items-center gap-1.5">
+            <Crown size={12} className="text-indigo-400" /> Pro Capability Showcases
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { icon: <Sparkles size={16} className="text-indigo-400" />, title: 'AI Itinerary Quality', desc: 'Detailed schedules built on priority Gemini computing models.' },
+              { icon: <Map size={16} className="text-cyan-400" />, title: 'Interactive Map Overlays', desc: 'Visual Mapbox route plotting and custom destination badges.' },
+              { icon: <DollarSign size={16} className="text-emerald-400" />, title: 'Budget Intelligence', desc: 'Collaborative expense split calculations and invoice timeline logs.' },
+              { icon: <Download size={16} className="text-amber-400" />, title: 'Offline Exports', desc: 'Download high-fidelity PDF/Excel schedules for remote usage.' }
+            ].map((showcase, index) => (
+              <div key={index} className="bg-surface-default border border-border/40 p-4 rounded-xl shadow-sm flex flex-col gap-2 text-xs">
+                <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border flex items-center justify-center shadow-sm">
+                  {showcase.icon}
+                </div>
+                <h4 className="font-bold text-text-primary mt-1.5">{showcase.title}</h4>
+                <p className="text-[10px] text-text-secondary leading-relaxed font-medium">{showcase.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* ── Payment History ── */}
+        {/* SSL & PCI payment gateways trust tags */}
+        <div className="flex gap-4 justify-center flex-wrap text-[10px] text-text-muted font-bold uppercase tracking-wider py-4">
+          <span className="flex items-center gap-1"><Shield size={12} /> SSL Encrypted Checkout</span>
+          <span className="flex items-center gap-1"><CreditCard size={12} /> Razorpay Secure Gateway</span>
+          <span className="flex items-center gap-1"><RefreshCw size={12} /> Cancel Anytime</span>
+        </div>
+
+        {/* Payment invoices history toggle logs drawer */}
         {isPro && (
-          <div className="bg-bg-glass backdrop-blur-[20px] border border-border rounded-2xl overflow-hidden mb-16">
+          <div className="bg-surface-default border border-border/40 rounded-2xl overflow-hidden shadow-sm">
             <button
-              type="button"
               onClick={handleShowHistory}
-              className="w-full py-4 px-6 bg-transparent border-none cursor-pointer flex justify-between items-center text-left text-white font-bold text-[0.95rem] outline-none"
+              className="w-full py-3.5 px-4 bg-transparent border-none cursor-pointer flex justify-between items-center text-left text-xs font-bold text-text-primary outline-none"
             >
-              <span className="flex items-center gap-2">
-                <History size={18} color="var(--primary)" />
-                Payment History
+              <span className="flex items-center gap-1.5">
+                <History size={14} className="text-indigo-400" /> Payment History Invoices
               </span>
-              {showHistory ? <ChevronUp size={16} color="var(--primary)" /> : <ChevronDown size={16} color="var(--color-text-muted)" />}
+              {showHistory ? <ChevronUp size={14} className="text-indigo-400" /> : <ChevronDown size={14} className="text-text-muted" />}
             </button>
 
             <AnimatePresence>
@@ -501,13 +465,13 @@ export default function Subscription () {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.15 }}
                 >
-                  <div className="border-t border-solid border-[rgba(255,255,255,0.04)]">
+                  <div className="border-t border-border/10 bg-surface-raised/30">
                     {subscription.paymentHistory?.length > 0
                       ? subscription.paymentHistory.map(p => <PaymentHistoryRow key={p._id} payment={p} />)
                       : (
-                        <div className="py-8 text-center text-text-muted text-sm">
+                        <div className="py-8 text-center text-text-muted text-xs font-medium">
                           No payment records found.
                         </div>
                       )
@@ -519,37 +483,31 @@ export default function Subscription () {
           </div>
         )}
 
-        {/* ── FAQ Section ── */}
-        <div className="border-t border-solid border-border pt-16">
-          <div className="text-center mb-12">
-            <div className="inline-flex p-2 bg-[rgba(14,165,233,0.1)] rounded-full text-primary mb-3">
-              <HelpCircle size={24} />
-            </div>
-            <h2 className="text-3xl font-extrabold font-['Plus_Jakarta_Sans',sans-serif]">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-text-secondary text-sm">Everything you need to know about TripSetGo pricing and billing</p>
+        {/* FAQs Accordions list */}
+        <div className="border-t border-border/20 pt-8 flex flex-col gap-6">
+          <div className="text-center flex flex-col items-center gap-1.5">
+            <h3 className="text-lg font-extrabold text-text-primary font-display">Frequently Asked Questions</h3>
+            <p className="text-[10px] text-text-secondary font-medium">Everything you need to know about TripSetGo billing</p>
           </div>
 
-          <div className="flex flex-col gap-4 max-w-[680px] mx-auto">
+          <div className="flex flex-col gap-2.5 max-w-xl mx-auto w-full">
             {FAQS.map((faq, index) => {
               const isOpen = openFaq === index
               return (
                 <div
                   key={index}
-                  className="bg-bg-glass backdrop-blur-[20px] border border-border rounded-xl overflow-hidden transition-colors duration-150 ease-out"
+                  className="bg-surface-default border border-border/40 rounded-xl overflow-hidden shadow-sm"
                 >
                   <button
-                    type="button"
                     id={`faq-${index}`}
                     onClick={() => toggleFaq(index)}
                     aria-expanded={isOpen}
-                    className="w-full py-5 px-6 bg-transparent border-none cursor-pointer flex justify-between items-center text-left text-white font-bold text-[0.95rem] outline-none"
+                    className="w-full py-3.5 px-4 bg-transparent border-none cursor-pointer flex justify-between items-center text-left text-xs font-bold text-text-primary outline-none"
                   >
                     <span>{faq.q}</span>
                     {isOpen
-                      ? <ChevronUp size={16} color="var(--primary)" />
-                      : <ChevronDown size={16} color="var(--color-text-muted)" />
+                      ? <ChevronUp size={14} className="text-indigo-400" />
+                      : <ChevronDown size={14} className="text-text-muted" />
                     }
                   </button>
 
@@ -559,9 +517,9 @@ export default function Subscription () {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.15 }}
                       >
-                        <div className="px-6 pb-5 pt-0 text-sm text-text-secondary leading-relaxed border-t border-solid border-[rgba(255,255,255,0.03)]">
+                        <div className="px-4 pb-4 pt-0 text-[11px] text-text-secondary leading-relaxed border-t border-border/10 font-medium">
                           {faq.a}
                         </div>
                       </motion.div>
@@ -572,6 +530,7 @@ export default function Subscription () {
             })}
           </div>
         </div>
+
       </div>
     </>
   )

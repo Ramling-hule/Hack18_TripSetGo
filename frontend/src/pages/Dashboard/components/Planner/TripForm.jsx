@@ -1,24 +1,29 @@
 import { useState, useEffect, useRef } from 'react'
-import { Sparkles, Navigation, MapPin, Plane, CalendarDays, DollarSign, Users, ChevronRight } from 'lucide-react'
+import { Sparkles, Navigation, MapPin, Plane, CalendarDays, DollarSign, Users, ChevronRight, Compass } from 'lucide-react'
+import { motion } from 'framer-motion'
 
-const plannerGlassPanelClass = 'bg-[rgba(26,31,47,0.7)] backdrop-blur-[40px] border border-solid border-[rgba(255,255,255,0.08)] border-t-[rgba(255,255,255,0.12)] shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]'
-const plannerSectionHeaderClass = 'flex items-center gap-2 mb-4 font-bold text-[0.875rem] uppercase tracking-wider'
-const plannerSectionNumClass = 'flex items-center justify-center w-6 h-6 rounded-md text-[0.7rem] font-bold'
-const plannerInputGroupClass = 'flex flex-col gap-[0.375rem] relative [&_label]:text-[0.75rem] [&_label]:font-semibold [&_label]:text-[var(--color-text-secondary)] [&_label]:ml-1'
-const plannerInputClass = 'w-full bg-[rgba(255,255,255,0.03)] border border-solid border-[rgba(255,255,255,0.08)] rounded-xl px-4 py-3 pl-10 text-[0.875rem] text-[var(--color-text-primary)] transition-all duration-200 outline-none hover:border-[rgba(255,255,255,0.15)] focus:border-[#0EA5E9] focus:bg-[rgba(14,165,233,0.03)] focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)] placeholder:text-[var(--color-text-muted)]'
-const plannerInputIconClass = 'absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none'
-const plannerChipLabelClass = 'text-[0.75rem] font-semibold text-[var(--color-text-secondary)] mb-2 ml-1'
-const plannerChipClass = (active) => `px-4 py-2 rounded-xl text-[0.8125rem] font-semibold transition-all duration-200 cursor-pointer border border-solid ${
+const plannerGlassPanelClass = 'bg-surface-glass/85 border border-border-default backdrop-blur-2xl shadow-lg'
+const plannerSectionHeaderClass = 'flex items-center gap-2 mb-4 font-bold text-xs uppercase tracking-wider font-display'
+const plannerSectionNumClass = 'flex items-center justify-center w-6 h-6 rounded-md text-[0.7rem] font-bold border border-border-subtle'
+const plannerInputGroupClass = 'flex flex-col gap-1.5 relative'
+const plannerInputClass = 'w-full bg-surface-base/40 border border-border-default rounded-[var(--radius-md)] px-4 py-3 pl-10 text-[0.875rem] text-text-primary transition-all duration-200 outline-none hover:border-border-interactive focus:border-border-focus focus:bg-indigo-950/15 focus:shadow-primary placeholder:text-text-muted'
+const plannerInputIconClass = 'absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none'
+const plannerChipLabelClass = 'text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 ml-1'
+
+const plannerChipClass = (active) => `px-4 py-2 rounded-[var(--radius-md)] text-[0.8125rem] font-semibold transition-all duration-200 cursor-pointer border ${
   active
-    ? 'bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white border-transparent shadow-[0_4px_12px_rgba(14,165,233,0.3)]'
-    : 'bg-[rgba(255,255,255,0.03)] text-[var(--color-text-secondary)] border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.15)]'
+    ? 'bg-indigo-dim text-indigo-300 border-indigo-500 shadow-primary scale-[1.01]'
+    : 'bg-surface-base/40 text-text-secondary border-border-default hover:bg-surface-hover hover:border-border-interactive hover:text-text-primary'
 }`
-const plannerPrefChipClass = (active) => `flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[0.8rem] font-medium transition-all duration-200 cursor-pointer border border-solid ${
+
+const plannerPrefChipClass = (active) => `flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[var(--radius-md)] text-[0.8rem] font-medium transition-all duration-200 cursor-pointer border ${
   active
-    ? 'bg-[rgba(139,92,246,0.15)] text-[#c4b5fd] border-[#8B5CF6] shadow-[0_0_12px_rgba(139,92,246,0.2)]'
-    : 'bg-[rgba(255,255,255,0.05)] text-[var(--color-text-secondary)] border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.25)] hover:text-[var(--color-text-primary)]'
+    ? 'bg-indigo-dim text-indigo-300 border-indigo-500 shadow-primary scale-[1.01]'
+    : 'bg-surface-base/40 text-text-secondary border-border-default hover:bg-surface-hover hover:border-border-interactive hover:text-text-primary'
 }`
-const plannerGenerateBtnClass = 'mt-6 self-end inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white px-8 py-3.5 rounded-xl font-bold text-[0.95rem] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(14,165,233,0.4)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none'
+
+const plannerGenerateBtnClass = 'mt-4 w-full inline-flex items-center justify-center gap-2 bg-indigo-700 text-white px-8 py-3.5 rounded-[var(--radius-md)] font-bold text-[0.95rem] transition-all duration-300 hover:bg-indigo-600 hover:shadow-primary hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none'
+
 
 const GROUP_TYPES = [
   { value: 'solo',   label: 'Solo' },
@@ -107,13 +112,14 @@ function CityAutocomplete({ value, onChange, placeholder, icon: Icon }) {
           left: 0,
           right: 0,
           marginTop: '0.4rem',
-          background: '#0F172A',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--color-surface-raised)',
+          border: '1px solid var(--color-border-default)',
           borderRadius: '12px',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+          boxShadow: 'var(--shadow-lg)',
           zIndex: 999,
-          maxHeight: '300px',
-          overflowY: 'auto'
+          maxHeight: '260px',
+          overflowY: 'auto',
+          backdropFilter: 'blur(16px)'
         }}>
           {filtered.map(c => (
             <div
@@ -128,11 +134,17 @@ function CityAutocomplete({ value, onChange, placeholder, icon: Icon }) {
                 fontSize: '0.85rem',
                 color: 'var(--color-text-primary)',
                 cursor: 'pointer',
-                borderBottom: '1px solid rgba(255,255,255,0.02)',
-                transition: 'background 0.15s'
+                borderBottom: '1px solid var(--color-border-subtle)',
+                transition: 'background 0.15s, color 0.15s'
               }}
-              onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.05)'}
-              onMouseLeave={e => e.target.style.background = 'transparent'}
+              onMouseEnter={e => {
+                e.target.style.background = 'var(--color-surface-hover)';
+                e.target.style.color = '#fff';
+              }}
+              onMouseLeave={e => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = 'var(--color-text-primary)';
+              }}
             >
               📍 {c}
             </div>
@@ -164,108 +176,45 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
 
   return (
     <div className={plannerGlassPanelClass} style={{
-      borderRadius: 20,
-      padding: '2rem',
+      borderRadius: 'var(--radius-xl)',
+      padding: '1.5rem 2rem 2rem 2rem',
       display: 'flex',
       flexDirection: 'column',
-      gap: '2rem',
-      height: '100%',
+      gap: '1.25rem',
+      height: 680,
     }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 12,
-          background: 'linear-gradient(135deg, #0EA5E9, #8B5CF6)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 20px rgba(14,165,233,0.3)',
-          flexShrink: 0,
-        }}>
-          <Sparkles size={20} color="white" />
-        </div>
-        <div>
-          <h2 style={{ fontWeight: 800, fontSize: '1.2rem', fontFamily: 'Plus Jakarta Sans, sans-serif', marginBottom: 2 }}>
-            AI Trip Planner
-          </h2>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
-            Gemini builds your customized roadmap in seconds
-          </p>
-        </div>
-      </div>
-
-      <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+      <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', height: '100%', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto', flex: 1, paddingRight: '0.5rem', paddingBottom: '0.5rem' }}>
 
         {/* Section 01: Route & Timeline */}
         <div>
-          <div className={plannerSectionHeaderClass} style={{ color: '#0EA5E9' }}>
-            <span className={plannerSectionNumClass} style={{ background: 'rgba(14,165,233,0.12)', color: '#0EA5E9' }}>01</span>
+          <div className={plannerSectionHeaderClass} style={{ color: 'var(--color-sky-500)' }}>
             <Navigation size={14} style={{ opacity: 0.7 }} />
             <span>Route &amp; Timeline</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem', position: 'relative', zIndex: 10 }}>
             <div className={plannerInputGroupClass}>
-              <label>Departure From</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginLeft: 4 }}>DEPARTURE FROM</label>
               <CityAutocomplete
                 value={form.source}
                 onChange={(val) => onChange({ source: val })}
                 placeholder="Origin"
                 icon={MapPin}
               />
-              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
-                {['Delhi', 'Mumbai', 'Bengaluru'].map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => onChange({ source: c })}
-                    style={{
-                      fontSize: '0.7rem',
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: '99px',
-                      padding: '0.15rem 0.45rem',
-                      color: 'var(--color-text-secondary)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
             </div>
             <div className={plannerInputGroupClass}>
-              <label>Destination To</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginLeft: 4 }}>DESTINATION TO</label>
               <CityAutocomplete
                 value={form.destination}
                 onChange={(val) => onChange({ destination: val })}
                 placeholder="Destination"
                 icon={Plane}
               />
-              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
-                {['Goa', 'Jaipur', 'Hyderabad'].map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => onChange({ destination: c })}
-                    style={{
-                      fontSize: '0.7rem',
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: '99px',
-                      padding: '0.15rem 0.45rem',
-                      color: 'var(--color-text-secondary)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div className={plannerInputGroupClass}>
-              <label>Start Date</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginLeft: 4 }}>START DATE</label>
               <div style={{ position: 'relative' }}>
                 <CalendarDays size={14} className={plannerInputIconClass} />
                 <input
@@ -278,7 +227,7 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
               </div>
             </div>
             <div className={plannerInputGroupClass}>
-              <label>End Date</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginLeft: 4 }}>END DATE</label>
               <div style={{ position: 'relative' }}>
                 <CalendarDays size={14} className={plannerInputIconClass} />
                 <input
@@ -296,16 +245,15 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
 
         {/* Section 02: Budget & Travelers */}
         <div>
-          <div className={plannerSectionHeaderClass} style={{ color: '#14B8A6' }}>
-            <span className={plannerSectionNumClass} style={{ background: 'rgba(20,184,166,0.12)', color: '#14B8A6' }}>02</span>
+          <div className={plannerSectionHeaderClass} style={{ color: 'var(--color-emerald-500)' }}>
             <DollarSign size={14} style={{ opacity: 0.7 }} />
             <span>Budget &amp; Travelers</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
             <div className={plannerInputGroupClass}>
-              <label>Budget Limit (₹)</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginLeft: 4 }}>BUDGET LIMIT (₹)</label>
               <div style={{ position: 'relative' }}>
-                <span className={plannerInputIconClass} style={{ fontWeight: 700, fontSize: '0.85rem', fontFamily: 'Inter' }}>₹</span>
+                <span className={plannerInputIconClass} style={{ fontWeight: 700, fontSize: '0.85rem', fontFamily: 'var(--font-family-body)' }}>₹</span>
                 <input
                   type="number"
                   className={plannerInputClass}
@@ -317,7 +265,7 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
               </div>
             </div>
             <div className={plannerInputGroupClass}>
-              <label>Number of Travelers</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginLeft: 4 }}>NUMBER OF TRAVELERS</label>
               <div style={{ position: 'relative' }}>
                 <Users size={14} className={plannerInputIconClass} />
                 <input
@@ -334,7 +282,7 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
-            <p className={plannerChipLabelClass}>Companion Type</p>
+            <p className={plannerChipLabelClass}>COMPANION TYPE</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {GROUP_TYPES.map(g => {
                 const active = form.groupType === g.value
@@ -353,7 +301,7 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
           </div>
 
           <div>
-            <p className={plannerChipLabelClass}>Travel Pace</p>
+            <p className={plannerChipLabelClass}>TRAVEL PACE</p>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {PACE_OPTIONS.map(p => {
                 const active = (form.pace || 'balanced') === p.value
@@ -374,9 +322,8 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
 
         {/* Section 03: Experience Preferences */}
         <div>
-          <div className={plannerSectionHeaderClass} style={{ color: '#8B5CF6' }}>
-            <span className={plannerSectionNumClass} style={{ background: 'rgba(139,92,246,0.12)', color: '#8B5CF6' }}>03</span>
-            <Sparkles size={14} style={{ opacity: 0.7 }} />
+          <div className={plannerSectionHeaderClass} style={{ color: 'var(--color-violet-500)' }}>
+            <Compass size={14} style={{ opacity: 0.7 }} />
             <span>Experience Preferences</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.5rem' }}>
@@ -394,6 +341,8 @@ export default function TripForm({ form, onSubmit, onChange, loading }) {
               )
             })}
           </div>
+        </div>
+
         </div>
 
         {/* Generate Button */}

@@ -7,8 +7,9 @@ export const tripsApi = apiSlice.injectEndpoints({
         url: '/api/v1/trips/my-trips',
         params: { page, limit },
       }),
+      transformResponse: (response) => response.data,
       providesTags: (result) =>
-        result?.trips
+        result && result.trips
           ? [
               ...result.trips.map(({ _id }) => ({ type: 'Trip', id: _id })),
               { type: 'Trip', id: 'LIST' },
@@ -17,6 +18,7 @@ export const tripsApi = apiSlice.injectEndpoints({
     }),
     getTrip: builder.query({
       query: (id) => `/api/v1/trips/${id}`,
+      transformResponse: (response) => response.data,
       providesTags: (result, error, id) => [{ type: 'Trip', id }],
     }),
     likeTrip: builder.mutation({

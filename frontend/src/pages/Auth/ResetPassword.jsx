@@ -1,4 +1,6 @@
 // src/pages/Auth/ResetPassword.jsx
+// Aurora Design System — Reset Password Page
+// Validates recovery tokens and saves new security keys.
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
@@ -7,6 +9,10 @@ import { Lock } from 'lucide-react'
 import { resetPassword, selectAuthLoading, selectAuthError } from '@/features/auth/authSlice'
 import Input from '@/components/common/Input'
 import Button from '@/components/common/Button'
+import AuthLayout from '@/components/layout/AuthLayout'
+import AuthHeader from '@/components/domain/auth/AuthHeader'
+import { validatePassword, validateConfirmPassword } from '@/utils/authValidation'
+import { entrance } from '@/components/landing/animations/variants'
 
 export default function ResetPassword() {
   const dispatch = useDispatch()
@@ -20,28 +26,119 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLocalErr('')
-    if (form.password !== form.confirmPassword) { setLocalErr('Passwords do not match'); return }
-    const res = await dispatch(resetPassword({ email: params.get('email'), otp: form.otp, newPassword: form.password }))
+
+    // Validate inputs
+    if (!form.otp || form.otp.length < 6) {
+      setLocalErr('Please enter the 6-digit OTP code')
+      return
+    }
+
+    const pwdErr = validatePassword(form.password)
+    if (pwdErr) { setLocalErr(pwdErr); return }
+
+    const confirmErr = validateConfirmPassword(form.password, form.confirmPassword)
+    if (confirmErr) { setLocalErr(confirmErr); return }
+
+    const res = await dispatch(resetPassword({
+      email: params.get('email'),
+      otp: form.otp,
+      newPassword: form.password
+    }))
     if (!res.error) navigate('/auth/login')
   }
 
+  const displayError = localErr || error
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'var(--gradient-hero)' }}>
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-        className="bg-bg-glass backdrop-blur-[20px] border border-border shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]" style={{ width: '100%', maxWidth: 420, padding: '2.5rem', borderRadius: 'var(--radius-xl)' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>Reset your password</h1>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginBottom: '2rem' }}>Enter the OTP from your email and your new password.</p>
-        {(localErr || error) && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '1.25rem', color: '#f87171', fontSize: '0.875rem' }}>{localErr || error}</div>}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <Input label="OTP Code" type="text" required placeholder="6-digit OTP" value={form.otp} onChange={e => setForm(p => ({ ...p, otp: e.target.value }))} />
-          <Input label="New Password" type="password" required placeholder="Min. 8 characters" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} icon={<Lock size={16} />} />
-          <Input label="Confirm Password" type="password" required placeholder="Confirm password" value={form.confirmPassword} onChange={e => setForm(p => ({ ...p, confirmPassword: e.target.value }))} icon={<Lock size={16} />} />
-          <Button type="submit" loading={loading} size="lg" style={{ width: '100%', marginTop: '0.5rem' }}>Reset Password</Button>
+    <AuthLayout>
+      <motion.div
+        variants={entrance}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Header branding */}
+        <AuthHeader
+          icon={<Lock size={24} />}
+          title="Reset your password"
+          subtitle="Enter the OTP from your email and your new password."
+        />
+
+        {/* Error panel */}
+        {displayError && (
+          <div
+            role="alert"
+            style={{
+              background: 'var(--color-rose-dim)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              borderRadius: 'var(--radius-sm)',
+              padding: 'var(--spacing-3) var(--spacing-4)',
+              marginBottom: 'var(--spacing-4)',
+              color: 'var(--color-rose-400)',
+              fontSize: 'var(--font-size-body-sm)',
+              fontWeight: 500,
+              textAlign: 'center',
+            }}
+          >
+            {displayError}
+          </div>
+        )}
+
+        {/* Form fields */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+          <Input
+            label="OTP Code"
+            type="text"
+            required
+            placeholder="6-digit OTP"
+            value={form.otp}
+            onChange={e => setForm(p => ({ ...p, otp: e.target.value }))}
+          />
+          <Input
+            label="New Password"
+            type="password"
+            required
+            placeholder="Min. 8 characters"
+            value={form.password}
+            onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+            icon={<Lock size={16} />}
+          />
+          <Input
+            label="Confirm Password"
+            type="password"
+            required
+            placeholder="Confirm password"
+            value={form.confirmPassword}
+            onChange={e => setForm(p => ({ ...p, confirmPassword: e.target.value }))}
+            icon={<Lock size={16} />}
+          />
+
+          <Button type="submit" loading={loading} size="lg" style={{ width: '100%', marginTop: 'var(--spacing-2)' }}>
+            Reset Password
+          </Button>
         </form>
-        <p style={{ marginTop: '1.5rem', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-          <Link to="/auth/login" style={{ color: 'var(--color-accent-primary)', textDecoration: 'none', fontWeight: 600 }}>← Back to login</Link>
+
+        {/* Alternate link */}
+        <p
+          style={{
+            textAlign: 'center',
+            marginTop: 'var(--spacing-6)',
+            fontSize: 'var(--font-size-body-sm)',
+            margin: 'var(--spacing-6) 0 0 0',
+          }}
+        >
+          <Link
+            to="/auth/login"
+            style={{
+              color: 'var(--color-indigo-400)',
+              textDecoration: 'none',
+              fontWeight: 600,
+            }}
+            className="hover:text-[var(--color-text-primary)] transition-colors"
+          >
+            &larr; Back to login
+          </Link>
         </p>
       </motion.div>
-    </div>
+    </AuthLayout>
   )
 }
