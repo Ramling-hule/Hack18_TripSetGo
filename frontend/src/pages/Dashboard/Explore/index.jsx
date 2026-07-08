@@ -4,7 +4,6 @@ import { Plane, CloudRain, MapPin, Utensils, Search } from 'lucide-react';
 import { travelApi } from '@/services/travelApi';
 import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
-import Loader from '@/components/common/Loader';
 import { useMapbox } from '@/hooks/useMapbox';
 import MapContainer from '@/components/map/MapContainer';
 import MapMarker from '@/components/map/MapMarker';
@@ -429,7 +428,7 @@ function WeatherTab() {
 // ── EXPLORE MAP COMPONENT ───────────────────────────────────────────────────
 function ExploreMap({ places, coords, type }) {
   const isAttr = type === 'attractions';
-  const { mapRef, mapContainerRef, map, mapLoaded } = useMapbox({
+  const { mapContainerRef, map, mapLoaded } = useMapbox({
     style: 'mapbox://styles/mapbox/streets-v12',
     center: coords || [78.9629, 20.5937],
     zoom: coords ? 13 : 4,

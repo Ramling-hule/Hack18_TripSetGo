@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { motion } from 'framer-motion'
-import { Mail, Lock, User } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Mail, Lock, User, Sparkles, Compass } from 'lucide-react'
 import { signup, selectAuthLoading, selectAuthError, clearError, setPendingEmail } from '@/features/auth/authSlice'
 import Input from '@/components/common/Input'
 import Button from '@/components/common/Button'
@@ -22,8 +22,17 @@ export default function Signup() {
   const error    = useSelector(selectAuthError)
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [localErr, setLocalErr] = useState('')
+  const [currentDestIndex, setCurrentDestIndex] = useState(0)
 
   useEffect(() => { return () => dispatch(clearError()) }, [dispatch])
+
+  // Rotate images for the side panel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentDestIndex(prev => (prev + 1) % FLOATING_DESTINATIONS.length)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -81,7 +90,6 @@ export default function Signup() {
           >
             {displayError}
           </div>
-        )}
 
         {/* Form fields */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>

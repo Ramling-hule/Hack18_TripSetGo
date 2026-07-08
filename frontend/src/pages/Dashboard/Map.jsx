@@ -337,11 +337,7 @@ export default function MapPage() {
   // Fetch nearby POIs based on search center / userLocation
   const fetchIdRef = useRef(0)
   useEffect(() => {
-    if (!userLocation) {
-      setEntities({ hotels: [], restaurants: [], attractions: [] })
-      setErrors({ hotels: null, restaurants: null, attractions: null })
-      return
-    }
+    if (!userLocation) return
 
     const [lng, lat] = userLocation
     const radiusM = radius * 1000

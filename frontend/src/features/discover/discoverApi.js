@@ -9,6 +9,7 @@ export const discoverApi = apiSlice.injectEndpoints({
       }),
       // Cache key based on filters only (cursor excluded) to support infinite scroll appending
       serializeQueryArgs: ({ queryArgs }) => {
+        // eslint-disable-next-line no-unused-vars
         const { cursor, ...filters } = queryArgs || {}
         return filters
       },

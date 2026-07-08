@@ -1,4 +1,3 @@
-import React from 'react'
 import { motion } from 'framer-motion'
 import { Users, X, CloudRain, Hotel, MapPin, Navigation, TrendingUp, HelpCircle } from 'lucide-react'
 import Badge from '@/components/common/Badge'

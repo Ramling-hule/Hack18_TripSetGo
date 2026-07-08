@@ -5,8 +5,8 @@
 // SkeletonCard: pre-composed card skeleton
 
 export default function Loader({ size = 'md', fullScreen = false, text }) {
-  const sizes = { sm: 20, md: 36, lg: 56 }
-  const px = sizes[size] || 36
+  const sizes = { sm: 24, md: 48, lg: 72 }
+  const px = sizes[size] || 48
 
   const spinner = (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>

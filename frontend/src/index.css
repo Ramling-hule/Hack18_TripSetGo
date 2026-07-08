@@ -284,9 +284,10 @@
   --animate-slideInRight:  slideInRight 0.2s var(--easing-enter) forwards;
   --animate-pulse-slow:    pulse 2.5s ease-in-out infinite;
 
+  /* ── Keyframes ─────────────────────────────────────────────────── */
   @keyframes shimmer {
     0%   { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    100% { background-position:  200% 0; }
   }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
@@ -300,7 +301,7 @@
     from { opacity: 0; transform: translateX(16px); }
     to   { opacity: 1; transform: translateX(0); }
   }
-  @keyframes pulse {
+  @keyframes pulseSlow {
     0%, 100% { opacity: 1; }
     50%      { opacity: 0.5; }
   }
@@ -368,8 +369,8 @@
 
   /* ── 9.4  Scrollbar — Dark, Subtle, Aurora-Branded ─────────────────────── */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: var(--color-surface-default);
@@ -486,6 +487,7 @@
     border-radius: 0;
     padding: 0;
     box-shadow: none;
+    width: auto;
   }
 
   label {
@@ -495,6 +497,7 @@
     font-weight: 500;
     color: var(--color-text-secondary);
     margin-bottom: 0.375rem;
+    letter-spacing: 0.01em;
   }
 
   .input-group label {
@@ -574,9 +577,9 @@
     color: var(--color-text-muted);
     font-size: 1.1rem;
     padding-right: 0.35rem;
+    background: transparent !important;
   }
   .mapboxgl-popup-close-button:hover {
-    background: transparent;
     color: var(--color-text-primary);
   }
   .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
@@ -803,3 +806,25 @@
     border: 1px solid ButtonText;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   Utility overrides
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Destination card image zoom on hover */
+.dest-image-bg {
+  transition: transform var(--transition-slow);
+}
+
+/* Typing indicator dots for Copilot */
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent-primary);
+  animation: bounceDot 1.2s ease-in-out infinite;
+  display: inline-block;
+}
+.typing-dot:nth-child(1) { animation-delay: 0s;    }
+.typing-dot:nth-child(2) { animation-delay: 0.18s; }
+.typing-dot:nth-child(3) { animation-delay: 0.36s; }

@@ -23,7 +23,8 @@ function AppContent() {
     if (token) {
       dispatch(fetchMe()).finally(() => setBooting(false))
     }
-  }, [dispatch, token])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch])
 
   // Socket connection
   useSocket()

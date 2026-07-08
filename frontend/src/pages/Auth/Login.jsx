@@ -22,8 +22,17 @@ export default function Login() {
   const error     = useSelector(selectAuthError)
   const [form, setForm]     = useState({ email: '', password: '' })
   const [showPwd, setShowPwd] = useState(false)
+  const [currentDestIndex, setCurrentDestIndex] = useState(0)
 
   useEffect(() => { return () => dispatch(clearError()) }, [dispatch])
+
+  // Rotate images for the side panel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentDestIndex(prev => (prev + 1) % FLOATING_DESTINATIONS.length)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -74,7 +83,6 @@ export default function Login() {
           >
             {error}
           </div>
-        )}
 
         {/* Credentials Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>

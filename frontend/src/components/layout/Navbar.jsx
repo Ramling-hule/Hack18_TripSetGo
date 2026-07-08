@@ -23,6 +23,7 @@ export default function Navbar({ onMenuClick, variant = 'dashboard' }) {
   const { isPastThreshold } = useScrollPosition({ enabled: isLanding, threshold: 80 })
 
   const handleLogout = async () => {
+    setDropOpen(false)
     await dispatch(logout())
     navigate('/auth/login')
   }
