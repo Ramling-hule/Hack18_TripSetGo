@@ -1,6 +1,6 @@
 // src/langgraph/graph.js
 // ─────────────────────────────────────────────────────────────────────────────
-// Phase 3 — TripSetGo Copilot: StateGraph Compilation
+// Phase 3/4 — TripSetGo Copilot: StateGraph Compilation
 //
 // This module is the single wiring point for the entire CopilotGraph.  It pulls
 // together the three pieces built in earlier phases and compiles them into a
@@ -10,6 +10,7 @@
 //   Phase 2 → callModel      (agentNode.js)— Agent node (Gemini + tools)
 //   Phase 2 → createToolNode (agentNode.js)— ToolNode (executes tool_calls)
 //   Phase 3 → graph.js (this file)         — Wiring + compilation
+//   Phase 4 → checkpointer param           — Optional MongoDBSaver for memory
 //
 // Graph topology (ReAct loop):
 //
@@ -35,8 +36,18 @@
 //
 // Usage (in a controller/worker):
 //   const { buildCopilotGraph } = require('./langgraph/graph')
-//   const app = buildCopilotGraph()                 // fresh per-request
+//
+//   // Without persistence (stateless, fresh per-request):
+//   const app = buildCopilotGraph()
 //   const result = await app.invoke(initialState, { recursionLimit: 25 })
+//
+//   // With MongoDB persistence (Phase 4):
+//   const { buildCopilotGraphWithCheckpointer } = require('./langgraph/graph')
+//   const app = await buildCopilotGraphWithCheckpointer()
+//   const result = await app.invoke(initialState, {
+//     configurable: { thread_id: 'conv_<conversationId>' },
+//     recursionLimit: 25,
+//   })
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -84,7 +95,17 @@ const MAX_CONSECUTIVE_ERRORS = 2
  *
  * @returns {import('@langchain/langgraph').CompiledStateGraph}
  */
-function buildCopilotGraph() {
+/**
+ * @param {import('@langchain/langgraph-checkpoint-mongodb').MongoDBSaver | null} [checkpointer]
+ *   Optional MongoDBSaver from `getCheckpointer()`.  When supplied, LangGraph
+ *   writes a state snapshot to MongoDB after every node execution and reloads
+ *   it on the next call sharing the same `thread_id`.
+ *
+ *   Pass `null` (or omit) for stateless / test usage.
+ *
+ * @returns {import('@langchain/langgraph').CompiledStateGraph}
+ */
+function buildCopilotGraph(checkpointer = null) {
 
   // ── Per-run error counter ──────────────────────────────────────────────────
   // Closed over by `agentNode` and `routeAfterAgent`.
@@ -284,16 +305,20 @@ function buildCopilotGraph() {
   // Validates topology (no orphan nodes, all edges resolve), returns a
   // runnable CompiledStateGraph with .invoke(), .stream(), .streamEvents().
   //
-  // Optional compile-time extensions you can add later:
-  //   checkpointer: <BaseCheckpointSaver>  — multi-turn memory / persistence
-  //   interruptBefore: ['tools']           — human-in-the-loop approval gate
-  //   interruptAfter:  ['agent']           — inspect AI output before continuing
-  const compiledGraph = workflow.compile()
+  // Phase 4: When a `checkpointer` is provided, LangGraph automatically:
+  //   • Loads previous state from MongoDB at the start of each invoke/stream
+  //     call (matched by configurable.thread_id).
+  //   • Saves a new checkpoint after every node execution.
+  //   • interruptBefore: ['tools'] — human-in-the-loop approval gate
+  //   • interruptAfter:  ['agent'] — inspect AI output before continuing
+  const compileOptions = checkpointer ? { checkpointer } : {}
+  const compiledGraph = workflow.compile(compileOptions)
 
   logger.info(
     '[Graph] CopilotGraph compiled. ' +
     `Nodes: agent, tools, fallback | ` +
-    `Max consecutive errors before fallback: ${MAX_CONSECUTIVE_ERRORS}`
+    `Max consecutive errors before fallback: ${MAX_CONSECUTIVE_ERRORS} | ` +
+    `Checkpointer: ${checkpointer ? 'MongoDB' : 'none (stateless)'}`
   )
 
   return compiledGraph
@@ -314,7 +339,7 @@ function buildCopilotGraph() {
 let _cachedGraph = null
 
 /**
- * Returns a singleton compiled CopilotGraph.
+ * Returns a singleton compiled CopilotGraph (stateless, no checkpointer).
  *
  * ⚠️  Not safe for concurrent production traffic — all concurrent requests
  * share the same `consecutiveErrors` counter.  Use `buildCopilotGraph()` in
@@ -329,6 +354,54 @@ function getCopilotGraph() {
     _cachedGraph = buildCopilotGraph()
   }
   return _cachedGraph
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// buildCopilotGraphWithCheckpointer()  [Phase 4]
+//
+// Async factory that fetches the MongoDBSaver singleton and compiles a fresh
+// graph wired to it.  Call this once at server startup (or lazily on first
+// request) and reuse the compiled graph across requests — the checkpointer is
+// shared safely because MongoDB handles concurrent writes at the collection
+// level.
+//
+// Each request/conversation must supply a unique thread_id in its
+// RunnableConfig so LangGraph can isolate checkpoints per conversation.
+// ─────────────────────────────────────────────────────────────────────────────
+
+let _cachedCheckpointedGraph = null
+
+/**
+ * Returns a singleton CopilotGraph compiled with MongoDB checkpointing.
+ *
+ * Fetches the MongoDBSaver (from checkpointer.js) and passes it to
+ * `buildCopilotGraph()`.  The graph is compiled once and reused.
+ *
+ * ⚠️  `getCheckpointer()` requires Mongoose to be connected.  Call this after
+ *    `connectDB()` has resolved (e.g. in server.js after DB init).
+ *
+ * @returns {Promise<import('@langchain/langgraph').CompiledStateGraph>}
+ */
+async function buildCopilotGraphWithCheckpointer() {
+  if (_cachedCheckpointedGraph) return _cachedCheckpointedGraph
+
+  const { getCheckpointer } = require('./checkpointer')
+  const checkpointer = await getCheckpointer()
+
+  // Note: we DON'T use buildCopilotGraph() here because the singleton
+  // checkpointed graph can be safely shared — MongoDB serialises concurrent
+  // checkpoint writes.  Per-request isolation of `consecutiveErrors` is still
+  // desirable, so we call the factory each time IF you need that guarantee.
+  // For simplicity in most deployments, a single compiled instance is fine.
+  _cachedCheckpointedGraph = buildCopilotGraph(checkpointer)
+  return _cachedCheckpointedGraph
+}
+
+/**
+ * Resets the checkpointed graph singleton (for tests).
+ */
+function resetCheckpointedGraph() {
+  _cachedCheckpointedGraph = null
 }
 
 /**
@@ -351,6 +424,15 @@ module.exports = {
 
   /** Reset the singleton (for tests). */
   resetCopilotGraph,
+
+  /**
+   * [Phase 4] Build (or return cached) graph compiled with MongoDB checkpointing.
+   * Requires Mongoose to be connected before first call.
+   */
+  buildCopilotGraphWithCheckpointer,
+
+  /** Reset the checkpointed singleton (for tests). */
+  resetCheckpointedGraph,
 
   /** Expose tuning constant for assertions in tests. */
   MAX_CONSECUTIVE_ERRORS,

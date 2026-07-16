@@ -39,12 +39,13 @@ const getQueue = (name) => {
   }
 };
 
-// Initialize the 5 primary queues
-const esSyncQueue = getQueue('es-sync');
-const itineraryQueue = getQueue('itinerary');
-const emailQueue = getQueue('email');
-const refreshQueue = getQueue('refresh');
-const recQueue = getQueue('recommendation');
+// Initialize the 5 primary queues + LangGraph agent queue (Phase 4)
+const esSyncQueue     = getQueue('es-sync');
+const itineraryQueue  = getQueue('itinerary');
+const emailQueue      = getQueue('email');
+const refreshQueue    = getQueue('refresh');
+const recQueue        = getQueue('recommendation');
+const langGraphQueue  = getQueue('langgraph'); // Phase 4 — LangGraph copilot jobs
 
 /**
  * Add a job to a specific queue.
@@ -77,5 +78,7 @@ module.exports = {
   emailQueue,
   refreshQueue,
   recQueue,
+  langGraphQueue,  // Phase 4
   addJob,
 };
+
