@@ -1,5 +1,6 @@
 // src/services/api.js — Axios instance with JWT + CSRF interceptors
 import axios from 'axios'
+import logger from '@/utils/logger'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL
@@ -53,12 +54,27 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
+    const status          = error.response?.status
+    const method          = (originalRequest?.method || 'GET').toUpperCase()
+    const urlString       = originalRequest?.url || ''
 
-    const urlString = originalRequest.url || ''
-    const isAuthRoute = urlString.includes('/auth/refresh') || 
-                        urlString.includes('/auth/login') || 
+    const isAuthRoute = urlString.includes('/auth/refresh') ||
+                        urlString.includes('/auth/login') ||
                         urlString.includes('/auth/signup') ||
                         urlString.includes('/auth/google/token')
+
+    // Log API errors (4xx/5xx) — skip auth routes to avoid noise for normal
+    // login failures and skip retry-eligible 401s handled below
+    const shouldLog = status && status >= 400 && !(status === 401 && !isAuthRoute)
+    if (shouldLog) {
+      const serverMessage = error.response?.data?.message || error.message
+      logger.error(`API ${method} ${urlString} → ${status}`, {
+        status,
+        method,
+        url:     urlString,
+        message: serverMessage,
+      })
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       if (isRefreshing) {
@@ -95,6 +111,9 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null)
         localStorage.removeItem('accessToken')
+        logger.error('Token refresh failed — redirecting to login', {
+          message: refreshError?.response?.data?.message || refreshError.message,
+        })
         window.location.href = '/auth/login'
         return Promise.reject(refreshError)
       } finally {

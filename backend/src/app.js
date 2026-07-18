@@ -2,7 +2,6 @@
 const express      = require('express')
 const cors         = require('cors')
 const helmet       = require('helmet')
-const morgan       = require('morgan')
 const cookieParser = require('cookie-parser')
 const compression  = require('compression')
 const http         = require('http')
@@ -167,10 +166,9 @@ const globalLimiter = rateLimit({
 })
 app.use('/api', globalLimiter)
 
-// Request logging via Winston
-app.use(morgan('short', {
-  stream: { write: (message) => logger.http(message.trim()) },
-}))
+// Request logging — attaches requestId to every req and logs structured access entries
+const requestLogger = require('./middleware/requestLogger.middleware')
+app.use(requestLogger)
 
 // Routes
 app.use('/api/v1', routes)
