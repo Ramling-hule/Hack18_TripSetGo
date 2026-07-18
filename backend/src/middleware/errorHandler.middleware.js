@@ -2,7 +2,17 @@
 const logger = require('../utils/logger')
 
 const errorHandler = (err, req, res, next) => {
-  logger.error(`${err.name || 'Error'}: ${err.message}`, { stack: err.stack, path: req.path })
+  const requestId  = req.requestId || res.locals?.requestId || null
+  const userId     = req.user?._id?.toString() || req.user?.id || null
+
+  logger.error(`${err.name || 'Error'}: ${err.message}`, {
+    requestId,
+    userId,
+    method:     req.method,
+    url:        req.originalUrl,
+    statusCode: err.statusCode || err.status || 500,
+    stack:      err.stack,
+  })
 
   // Mongoose validation errors
   if (err.name === 'ValidationError') {
