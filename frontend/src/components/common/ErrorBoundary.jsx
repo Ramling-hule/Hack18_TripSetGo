@@ -5,6 +5,7 @@
 import { Component } from 'react'
 import { AlertTriangle, RotateCcw, Home } from 'lucide-react'
 import Button from './Button'
+import logger from '@/utils/logger'
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -17,7 +18,11 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('Uncaught UI error:', error, info?.componentStack)
+    // Send to backend log pipeline in production; console in development
+    logger.error(error, {
+      componentStack: info?.componentStack?.slice(0, 2000) || '',
+      context: 'ErrorBoundary',
+    })
   }
 
   handleReload = () => {

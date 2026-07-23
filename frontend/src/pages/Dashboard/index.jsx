@@ -43,9 +43,6 @@ export default function Dashboard() {
   }
 
   // Calculate some dummy stats based on trips array for visual polish
-  const totalTrips = trips.length || 0
-  const totalDays = trips.reduce((acc, trip) => acc + (trip.planData?.meta?.total_days || 0), 0)
-  const countries = new Set(trips.map(t => t.destination.split(',').pop().trim())).size || 0
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }} className="animate-fadeIn">

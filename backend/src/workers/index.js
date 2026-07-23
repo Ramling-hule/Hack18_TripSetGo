@@ -4,6 +4,7 @@ const itineraryWorker = require('./itinerary.worker');
 const emailWorker = require('./email.worker');
 const refreshWorker = require('./refresh.worker');
 const recommendationWorker = require('./recommendation.worker');
+const langGraphWorker = require('./langgraph.worker'); // Phase 4 — LangGraph agent worker
 const { closeQueueConnection } = require('../config/queue');
 const { closeCacheConnection } = require('../config/redis');
 
@@ -26,7 +27,8 @@ const startWorkers = () => {
       itineraryWorker.initWorker(),
       emailWorker.initWorker(),
       refreshWorker.initWorker(),
-      recommendationWorker.initWorker()
+      recommendationWorker.initWorker(),
+      langGraphWorker.initLangGraphWorker(), // Phase 4
     );
     initialized = true;
     logger.info('✅ All background workers started successfully');

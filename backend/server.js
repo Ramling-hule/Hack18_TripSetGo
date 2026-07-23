@@ -27,8 +27,11 @@ const PORT = process.env.PORT || 5000
 
 // Handle Uncaught Exceptions
 process.on('uncaughtException', (err) => {
-  logger.error('UNCAUGHT EXCEPTION! 💥 Shutting down...')
-  logger.error(err.name, err.message)
+  logger.error('UNCAUGHT EXCEPTION — shutting down', {
+    name:    err.name,
+    message: err.message,
+    stack:   err.stack,
+  })
   process.exit(1)
 })
 
@@ -110,9 +113,12 @@ connectDB().then(async () => {
 
 // Handle Unhandled Rejections
 process.on('unhandledRejection', (err) => {
-  logger.error('UNHANDLED REJECTION! 💥 Shutting down...')
-  logger.error(err.name, err.message)
+  logger.error('UNHANDLED REJECTION — shutting down', {
+    name:    err?.name,
+    message: err?.message,
+    stack:   err?.stack,
+  })
   server.close(() => {
     process.exit(1)
   })
-})// force reload 6
+})
