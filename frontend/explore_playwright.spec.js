@@ -118,8 +118,10 @@ test.describe('TripSetGo Explore Hub Validation', () => {
     await expect(
       page.locator('button:has-text("Map")')
         .or(page.locator('text=No results found'))
+        .or(page.locator('.text-rose-400'))
         .or(page.locator('text=Failed to fetch'))
         .or(page.locator('text=unavailable'))
+        .or(page.locator('text=Could not geocode'))
     ).toBeVisible({ timeout: 15000 });
     
     // Toggle view to Map

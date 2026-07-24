@@ -1,15 +1,3 @@
-<<<<<<< Updated upstream
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plane, CloudRain, MapPin, Utensils, Search } from 'lucide-react';
-import { travelApi } from '@/services/travelApi';
-import Input from '@/components/common/Input';
-import Button from '@/components/common/Button';
-import { useMapbox } from '@/hooks/useMapbox';
-import MapContainer from '@/components/map/MapContainer';
-import MapMarker from '@/components/map/MapMarker';
-import MapPopup from '@/components/map/MapPopup';
-=======
 // src/pages/Dashboard/Explore/index.jsx
 // Aurora Design System — Explore Hub
 // Real-time travel intelligence workspace. Integrates flight status search,
@@ -31,7 +19,6 @@ import { useMapbox } from '@/hooks/useMapbox'
 import MapContainer from '@/components/map/MapContainer'
 import MapMarker from '@/components/map/MapMarker'
 import MapPopup from '@/components/map/MapPopup'
->>>>>>> Stashed changes
 
 const TABS = [
   { id: 'flights', label: 'Flights', icon: Plane, color: 'var(--color-indigo-400)' },
@@ -761,7 +748,7 @@ function ExploreMap({ places, coords, type }) {
     const lon = place.coordinates?.lon
     if (!lat || !lon) return null
     return {
-      _id: place.id || place.fsqId || `${type}-${idx}`,
+      _id: place.id || place.providerPlaceId || `${type}-${idx}`,
       _entityType: isAttr ? 'Attraction' : 'Restaurant',
       name: place.name,
       location: { type: 'Point', coordinates: [lon, lat] },
